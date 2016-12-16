@@ -1,0 +1,6 @@
+Physics Engine:
+http://www.jbox2d.org/
+A french guy made the same thing as we are. Here's a link to his code for reference:
+https://github.com/sebastienD/genetic-car/tree/master/genetic-car-server/src/main/java/fr/genetic/server/simulation
+A book on genetic algorithm in Java. REQUIRED READING
+https://drive.google.com/open?id=0BykHKngTFHyQbjFjellKMGpLMnM
