@@ -31,9 +31,7 @@ public class SimulationTest {
 		model.addTest(new LaunchTest());
 		JFrame testbed = new JFrame();
 		testbed.setLayout(new BorderLayout());
-	    TestbedSidePanel side = new TestbedSidePanel(model, controller);
 	    testbed.add((Component) panel, "Center");
-	    testbed.add(new JScrollPane(side), "East");
 	    testbed.pack();
 	    testbed.setVisible(true);
 	    testbed.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

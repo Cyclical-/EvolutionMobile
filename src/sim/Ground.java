@@ -6,17 +6,16 @@ import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.*;
 
-public class Ground {
+public class Ground{
 
 	private World world;
 
 	private float segmentHeight = 0.2f;
 	private float segmentLength = 1.0f;
 
-	private int maxSegments = 100;
+	private int maxSegments = 300;
 	
 	private ArrayList<Vec2> newCoordinates;
-	private ArrayList<Body> tiles;
 
 	public Ground(World world) {
 		this.world = world;
@@ -25,10 +24,12 @@ public class Ground {
 	public void createGround(){
 		
 		Vec2 tilePos = new Vec2(0, -0.5f);
-		for (int i = 0; i < maxSegments; i++){
-			Body previousTile = newTile(tilePos, (float)((next(-10f, 8f) * 8f / maxSegments) * Math.pow(-1, i)));
-			//tiles.add(previousTile);
-			Fixture lastFixture = previousTile.getFixtureList();
+		for (int k = 0; k < 4; k++){
+			Body start = newTile(tilePos, 0f);
+			tilePos = start.getWorldPoint(this.newCoordinates.get(3));
+		}
+		for (int i = 0; i < maxSegments-4; i++){
+			Body previousTile = newTile(tilePos, (float)((next(-10f, 8f) * 8f / 100) * Math.pow(-1, i)));
 			tilePos = previousTile.getWorldPoint(this.newCoordinates.get(3));
 		}
 	}
@@ -51,20 +52,18 @@ public class Ground {
 		Vec2 center = new Vec2(0, 0);
 		newCoordinates = rotate(coordinates, center, angle);
 		PolygonShape segment = new PolygonShape();
-		segment.set(newCoordinates.toArray(new Vec2[0]), newCoordinates.size());
 		
+		segment.set(newCoordinates.toArray(new Vec2[0]), newCoordinates.size());
 		FixtureDef fixture = new FixtureDef();
 		fixture.setFriction(0.5f);
 		fixture.setShape(segment);
+		
 		body.createFixture(fixture);
+		
 		return body;
 		
 		
 		}
-	
-	
-	
-		
 
 
 	/**
@@ -76,7 +75,7 @@ public class Ground {
 	 * @return the adjusted segment coordinates
 	 */
 	private ArrayList<Vec2> rotate(Vec2[] coords, Vec2 center, float angle) {
-		ArrayList<Vec2> newcoords = new ArrayList<>();
+		ArrayList<Vec2> newcoords = new ArrayList<Vec2>();
 		for (int k = 0; k < coords.length; k++) {
 			Vec2 nc = new Vec2();
 			nc.x = new Float(Math.cos(angle) * (coords[k].x - center.x) - Math.sin(angle) * (coords[k].y - center.y) + center.x);
