@@ -21,8 +21,7 @@ public class Ground{
 		this.world = world;
 	}
 	
-	public void createGround(){
-		
+	public void createGround(){		
 		Vec2 tilePos = new Vec2(0, -0.5f);
 		for (int k = 0; k < 4; k++){
 			Body start = newTile(tilePos, 0f);
