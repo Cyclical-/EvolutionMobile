@@ -31,6 +31,7 @@ public class Ground{
 			Body previousTile = newTile(tilePos, (float)((next(-10f, 8f) * 8f / 100) * Math.pow(-1, i)));
 			tilePos = previousTile.getWorldPoint(this.newCoordinates.get(3));
 		}
+		
 	}
 	
 	public float next(float minValue, float maxValue) {
