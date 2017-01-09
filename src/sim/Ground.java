@@ -28,15 +28,12 @@ public class Ground{
 			tilePos = start.getWorldPoint(this.newCoordinates.get(3));
 		}
 		for (int i = 0; i < maxSegments-4; i++){
-			Body previousTile = newTile(tilePos, (float)((next(-10f, 8f) * 8f / 100) * Math.pow(-1, i)));
+			Body previousTile = newTile(tilePos, (float)((Util.nextFloat(-10f, 8f) * 8f / 100) * Math.pow(-1, i)));
 			tilePos = previousTile.getWorldPoint(this.newCoordinates.get(3));
 		}
 		
 	}
 	
-	public float next(float minValue, float maxValue) {
-        return (new SecureRandom().nextFloat() * (maxValue - minValue)) + minValue;
-	}	
 	
 	private Body newTile(Vec2 pos, float angle){
 		BodyDef bodyDef = new BodyDef();
@@ -59,7 +56,6 @@ public class Ground{
 		fixture.setShape(segment);
 		
 		body.createFixture(fixture);
-		
 		return body;
 		
 		
