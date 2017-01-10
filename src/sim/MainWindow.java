@@ -10,6 +10,8 @@ import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.World;
 import sim.Ground;
 
+import java.util.ArrayList;
+
 public class MainWindow extends Application {
 
     public static final Vec2 GRAVITY = new Vec2(0.0F, -9.81F);
@@ -88,6 +90,25 @@ public class MainWindow extends Application {
     public static float toPixelHeight(float height) {
         return height * 50f;
     }
+
+    public void rouletteSelection(ArrayList<Car> currentGen){
+        
+
+    }
+
+    public void crossover (){
+
+    }
+
+    public void mutation(){
+
+    }
+
+    public void createChild(){
+
+        new Car(genome)
+    }
+
 
     public static void main(String[] args) {
         launch(args);
