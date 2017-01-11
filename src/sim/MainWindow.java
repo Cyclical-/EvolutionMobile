@@ -218,7 +218,7 @@ public class MainWindow extends Application {
         return HEIGHT - y * 50f;
     }
 
-    public void rouletteSelection(ArrayList<Car> currentGen){
+    public float[][] rouletteSelection(ArrayList<Car> currentGen){
 
         //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
         double [][] fitnessScores = new double[20][2];
@@ -270,11 +270,11 @@ public class MainWindow extends Application {
 
         //Call Crossover method
         //next step
-        crossover(parents);
-
+        float[][] childrenGenomes = crossover(parents);
+        return childrenGenomes;
     }
 
-    public void crossover (ArrayList<Car> parents){
+    public float [][] crossover (ArrayList<Car> parents){
         float[][] children = new float[20][22];
         int i = 0;
         for (int two = 0; two < 2; two++) {
@@ -316,10 +316,11 @@ public class MainWindow extends Application {
                 i += 2;
             }
         }
-        mutation(children);
+        float[][] childrenGenomes = mutation(children);
+        return childrenGenomes;
     }
 
-    public void mutation(float[][] children){
+    public float[][] mutation(float[][] children){
         final double MUTATION_RATE = 0.2;
         final double MUTATION_EFFECT = 0.2;
         for (int i = 0; i < children.length; i++) {
@@ -331,10 +332,17 @@ public class MainWindow extends Application {
                 }
             }
         }
+        return children;
     }
 
-    public void createNextGen(float[][] children){
+    public ArrayList<Car> createNextGen(float[][] childrenGenomes){
+        ArrayList<Car> nextGen = new ArrayList<>();
 
+        for (int i = 0; i < childrenGenomes.length; i++){
+            nextGen.add (new Car(childrenGenomes[i], world));
+        }
+
+        return nextGen;
     }
 
 
