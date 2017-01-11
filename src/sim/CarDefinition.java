@@ -19,7 +19,8 @@ public class CarDefinition {
 	private static final float MIN_MAGNITUDE = 0.1F;
 	private static final float MAX_MAGNITUDE = 1F;
 	private static final double MAGNITUDE_MULTIPLIER = 3.0;
-	private static final int NUM_VERTICES = 8;
+	public static final int NUM_VERTICES = 8;
+	public static final float CHASSIS_DENSITY = 100F;
 	
 	private ArrayList<Vec2> vertices;
 	
@@ -27,7 +28,7 @@ public class CarDefinition {
 	private static final float MIN_WHEEL_RADIUS = 0.1F;
 	private static final float MAX_WHEEL_RADIUS = 1.0F;
 	private static final float WHEEL_DENSITY = 60F;
-	private static final int NUM_WHEELS = 3;
+	public static final int NUM_WHEELS = 3;
 
 	
 	public ArrayList<WheelDefinition> wheels;
@@ -36,6 +37,11 @@ public class CarDefinition {
 	public CarDefinition() {
 		this.vertices = new ArrayList<Vec2>();
 		this.wheels = new ArrayList<WheelDefinition>();
+	}
+	
+	public CarDefinition(ArrayList<Vec2> vertices, ArrayList<WheelDefinition> wheel){
+		this.vertices = vertices;
+		this.wheels = wheels;
 	}
 	
 	public ArrayList<Vec2> getVertices(){
@@ -54,9 +60,11 @@ public class CarDefinition {
 	 */
 	public CarDefinition createRandomCar(){
 		//generate chassis vectors
+		//divide the circle into equal parts
+		float segment = MAX_ANGLE/NUM_VERTICES;
 		this.vertices.add(new Vec2(0,0));
 		for (int i = 0; i < NUM_VERTICES; i++){
-			float angle = Util.nextFloat(MIN_ANGLE, MAX_ANGLE);
+			float angle = Util.nextFloat((segment*i), (segment*(i+1)));
 			float magnitude = Util.nextFloat(MIN_MAGNITUDE, MAX_MAGNITUDE);
 			this.vertices.add(Util.polarToRectangular(magnitude, angle));
 		}
