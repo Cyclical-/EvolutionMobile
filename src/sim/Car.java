@@ -41,6 +41,7 @@ public class Car {
 <<<<<<< HEAD
 
 	public double score;
+	public boolean selected = false;
 
 	public Car(CarDefinition carDefinition, World world) {
 =======
@@ -114,6 +115,10 @@ public class Car {
 		return this.genome;
 	}
 	
-	
+	public double getFitnessScore(){ return this.score; }
+
+	public void setSelected() {this.selected = true;}
+
+	public boolean getSelected() {return this.selected; }
 
 }

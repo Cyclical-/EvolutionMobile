@@ -253,15 +253,16 @@ public class MainWindow extends Application {
             selectionNum = ((double) Math.random()*101);
 
             if ((selectionNum >= 0) && (selectionNum <= rouletteWheel[0])){
-                if ((currentGen.get(0)).getSelected() == false) {
+                if (!currentGen.get(0).getSelected()) {
                     parents.add(currentGen.get(0));
-
+                    currentGen.get(0).setSelected();
                 }
             }
             for (int j = 1; j < rouletteWheel.length; j++){
-                if ((selectionNum > rouletteWheel[i-1]) && (selectionNum <= rouletteWheel[i])){
-                    if ((currentGen.get(i)).getSelected() == false) {
+                if ((selectionNum > rouletteWheel[j-1]) && (selectionNum <= rouletteWheel[j])){
+                    if (!currentGen.get(j).getSelected()) {
                         parents.add(currentGen.get(1));
+                        currentGen.get(j).setSelected();
                     }
                 }
             }
