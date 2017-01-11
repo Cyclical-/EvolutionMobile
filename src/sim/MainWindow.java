@@ -10,6 +10,8 @@ import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.World;
 import sim.Ground;
 
+import java.util.ArrayList;
+
 public class MainWindow extends Application {
 
     public static final Vec2 GRAVITY = new Vec2(0.0F, -9.81F);
@@ -88,6 +90,62 @@ public class MainWindow extends Application {
     public static float toPixelHeight(float height) {
         return height * 50f;
     }
+
+    public void rouletteSelection(ArrayList<Car> currentGen){
+
+        //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
+        double [][] fitnessScores = new double[20][2];
+        int count = 0;
+        for (Car car: currentGen){
+            fitnessScores[count][0] = car.getFitnessScore();
+            count++;
+
+        }
+
+        //Find sum of all fitness scores
+        double sumOfFitnessScores = 0;
+        for (int i = 0; i < fitnessScores.length; i++){
+            sumOfFitnessScores = fitnessScores[i][0] + sumOfFitnessScores;
+        }
+
+        //Find each car's probability of selection
+        for (int i = 0; i < fitnessScores.length; i++){
+            fitnessScores[i][1] = (fitnessScores[i][0] / sumOfFitnessScores)*100;
+        }
+
+        double[] rouletteWheel = new double[20];
+        rouletteWheel[0] = fitnessScores[0][1];
+        for (int i = 1; i < rouletteWheel.length; i++){
+            rouletteWheel[i] = fitnessScores[i][1] + rouletteWheel[i-1];
+        }
+
+        //selecting parents
+        double selectionNum;
+        ArrayList<Car> parents = new ArrayList<>();
+        do{
+            selectionNum = ((double) Math.random()*101);
+
+            if ((selectionNum >= 0) && (selectionNum <= rouletteWheel[0])){
+                parents.add()
+            }
+            for (int j = )
+        }while (parents.size() < 10);
+
+    }
+
+    public void crossover (){
+
+    }
+
+    public void mutation(){
+
+    }
+
+    public void createChild(float[] genome){
+
+        new Car(genome);
+    }
+
 
     public static void main(String[] args) {
         launch(args);
