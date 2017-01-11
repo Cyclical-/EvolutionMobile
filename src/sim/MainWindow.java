@@ -333,9 +333,8 @@ public class MainWindow extends Application {
         }
     }
 
-    public void createChild(float[] genome){
+    public void createNextGen(float[][] children){
 
-        new Car(genome);
     }
 
 
