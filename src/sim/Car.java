@@ -31,7 +31,9 @@ public class Car {
     public CarDefinition definition;	
     
 	private float[] genome;
-	
+
+	public double score;
+
 	public Car(CarDefinition carDefinition, World world) {
 		this.world = world;
 		this.definition = carDefinition;
