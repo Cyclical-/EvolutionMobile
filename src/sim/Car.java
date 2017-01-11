@@ -1,9 +1,15 @@
 package sim;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+
+import javax.smartcardio.Card;
 
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
+import org.jbox2d.dynamics.BodyDef;
+import org.jbox2d.dynamics.BodyType;
 import org.jbox2d.dynamics.World;
 
 import sim.CarDefinition.WheelDefinition;
@@ -17,6 +23,7 @@ public class Car {
 	private Body wheel2;
 	private Body wheel3;
 	private World world;
+	private double score = 0;
 	
 
     private int health = MAX_CAR_HEALTH;
@@ -32,11 +39,18 @@ public class Car {
     
 	private float[] genome;
 	
-	public Car(CarDefinition carDefinition, World world) {
+	
+	public Car(float[] genome, World world) {
 		this.world = world;
-		this.definition = carDefinition;
+		this.genome = genome;
+		this.definition = createDefinition();
 		writeGenome();
-		this.genome = new float[22];
+	}
+	
+	private CarDefinition createDefinition(){
+		for (int i = 0; i < CarDefinition.NUM_VERTICES; i++){
+			
+		}
 	}
 	
 	/**
@@ -60,6 +74,32 @@ public class Car {
 			this.genome[(i*2)+1+(vertices.size()*2)] = wheels.get(i).getVertex();
 		}
  		
+	}
+	
+	private ArrayList<Float> sortAngles(ArrayList<Vec2> vertices){
+		ArrayList<Float> angles = new ArrayList<Float>();
+		for (int i = 0; i < vertices.size(); i++){
+			float[] polar = Util.rectangularToPolar(vertices.get(i));
+			angles.add(new Float(polar[1]));
+		}
+		Collections.sort(angles);
+		return angles;
+	}
+	
+	private Body createChassis(ArrayList<Vec2> vertices){
+		BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyType.DYNAMIC;
+        bodyDef.position = new Vec2(0.0F, 4.0F);
+        Body body = world.createBody(bodyDef);
+        float[][] points = new float[2][vertices.size()];
+        for (int i = 0; i < vertices.size(); i++){
+        	
+        }
+        return body;
+	}
+	
+	private void createChassisPart(Body body, Vec2 one, Vec2 two){
+		
 	}
 	
 	
