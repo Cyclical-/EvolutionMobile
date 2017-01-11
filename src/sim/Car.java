@@ -39,6 +39,8 @@ public class Car {
 	public CarDefinition definition;
 
 	private float[] genome;
+	
+	private boolean selected;
 
 	public Car(float[] genome, World world) {
 		this.world = world;
@@ -128,6 +130,18 @@ public class Car {
 
 	public float[] getGenome() {
 		return this.genome;
+	}
+	
+	public boolean getSelected(){
+		return this.selected;
+	}
+	
+	public void setSelected(){
+		this.selected = true;
+	}
+	
+	public double getFitnessScore(){
+		return this.score;
 	}
 
 }
