@@ -46,6 +46,8 @@ public class MainWindow extends Application {
         Ground ground = new Ground(world);
         ground.createGround();
 
+        //Create gen 0 here
+
         bodyList = new Body[world.getBodyCount()];
         Body body = world.getBodyList();
         for (int i = 0; i < world.getBodyCount(); i++) {
@@ -60,6 +62,12 @@ public class MainWindow extends Application {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        //check temermination requirements
+
+        //if no to terminate then proceed to selection
+        float[][] childrenGenome = rouletteSelection(currentGen);
+        ArrayList<Car> nextGen = createNextGen(childrenGenome);
 
         Scene scene = new Scene(root);
 
