@@ -22,7 +22,7 @@ public class CarDefinition {
 	public static final int NUM_VERTICES = 8;
 	public static final float CHASSIS_DENSITY = 100F;
 	
-	public ArrayList<Vec2> vertices;
+	private ArrayList<Vec2> vertices;
 	
 	//wheel properties
 	private static final float MIN_WHEEL_RADIUS = 0.1F;
@@ -31,7 +31,7 @@ public class CarDefinition {
 	public static final int NUM_WHEELS = 3;
 
 	
-	public ArrayList<WheelDefinition> wheels;
+	private ArrayList<WheelDefinition> wheels;
 	
 
 	public CarDefinition() {
@@ -44,8 +44,17 @@ public class CarDefinition {
 		this.wheels = wheels;
 	}
 	
+	public void addVertex(Vec2 vertex){
+		this.vertices.add(vertex);
+	}
+
+	
 	public ArrayList<Vec2> getVertices(){
 		return this.vertices;
+	}
+	
+	public void addWheel(WheelDefinition wheel){
+		this.wheels.add(wheel);
 	}
 	
 	public ArrayList<WheelDefinition> getWheels(){

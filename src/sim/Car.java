@@ -35,14 +35,13 @@ public class Car {
 	private double score = 0;
 
 	private int health = MAX_CAR_HEALTH;
-	private float maxPosition = 0F;
+	private float maxPositionx = 0F;
 	private float maxPositiony = 0F;
 	private float minPositiony = 0F;
 
-	public int frames = 0;
 
-	public boolean alive = true;
-
+	public boolean alive;
+	
 	public CarDefinition definition;
 
 	private float[] genome;
@@ -59,23 +58,34 @@ public class Car {
 		this.definition = def;
 		this.wheels = new ArrayList<Body>();
 		writeGenome();
-		this.chassis = createChassis(this.definition.getVertices()); //create chassis
+		this.chassis = createChassis(this.definition.getVertices()); // create chassis
 		float carMass = this.chassis.getMass();
-        RevoluteJointDef jointDefinition = new RevoluteJointDef();
-		//create wheels
-		for (int i = 0; i < this.definition.getWheels().size(); i++){
+		RevoluteJointDef jointDefinition = new RevoluteJointDef();
+		// create wheels
+		for (int i = 0; i < this.definition.getWheels().size(); i++) {
 			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
 			carMass += this.wheels.get(i).getMass();
 			createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
-		}        
-        
-		
+		}
+		this.alive = true;
+
 	}
-	
-	public Car(float[] genome, World world){
+
+	public Car(float[] genome, World world) {
 		this.world = world;
 		this.genome = genome;
 		this.definition = createDefinition();
+		this.wheels = new ArrayList<Body>();
+		this.chassis = createChassis(this.definition.getVertices()); // create chassis
+		float carMass = this.chassis.getMass();
+		RevoluteJointDef jointDefinition = new RevoluteJointDef();
+		// create wheels
+		for (int i = 0; i < this.definition.getWheels().size(); i++) {
+			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
+			carMass += this.wheels.get(i).getMass();
+			createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+		}
+		this.alive = true;
 	}
 
 	/**
@@ -85,8 +95,15 @@ public class Car {
 	 * @return
 	 */
 	private CarDefinition createDefinition() {
+		ArrayList<Vec2> vertices = new ArrayList<Vec2>();
+		ArrayList<WheelDefinition> wheels = new ArrayList<WheelDefinition>();
 		for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
-
+			for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
+				float[] polar = new float[2];
+				polar[0] = this.genome[i*2];
+				polar[1] = this.genome[(i*2) + 1];
+				this.definition
+			}
 		}
 	}
 
@@ -115,6 +132,46 @@ public class Car {
 
 	}
 
+	public boolean checkDeath() {
+		Vec2 position = this.getPosition();
+
+		if (position.y > this.maxPositiony) {
+			this.maxPositiony = position.y;
+		}
+
+		if (position.y < minPositiony) {
+			this.minPositiony = position.y;
+		}
+
+		if (position.x > maxPositionx + 0.02f) {
+			this.health = MAX_CAR_HEALTH;
+			this.maxPositionx = position.x;
+		} else {
+			if (Math.abs(this.chassis.getLinearVelocity().x) < 0.01f) {
+				this.health -= 3;
+			}
+			if (position.x > maxPositionx) {
+				this.maxPositionx = position.x;
+			}
+			this.health--;
+			if (this.health <= 0) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+	
+	public void kill(){
+		this.world.destroyBody(this.chassis);
+		for (Body wheel : this.wheels){
+			this.world.destroyBody(wheel);
+		}
+		this.alive = false;
+	}
+
+	
+
 	/**
 	 * sortAngles
 	 * 
@@ -140,7 +197,7 @@ public class Car {
 	 * @return
 	 */
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
-		if (wheelDef.getVertex() == -1){
+		if (wheelDef.getVertex() == -1) {
 			return null;
 		}
 		BodyDef bodyDef = new BodyDef();
@@ -274,7 +331,7 @@ public class Car {
 	 * @return
 	 */
 	public double getFitnessScore() {
-		return this.score;
+		return this.maxPositionx;
 	}
 
 }
