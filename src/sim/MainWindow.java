@@ -130,7 +130,7 @@ public class MainWindow extends Application {
         return height * 50f;
     }
 
-    public void rouletteSelection(ArrayList<Car> currentGen){
+    public float[][] rouletteSelection (ArrayList<Car> currentGen){
 
         //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
         double [][] fitnessScores = new double[20][2];
@@ -170,7 +170,6 @@ public class MainWindow extends Application {
             for (int j = )
         }while (parents.size() < 10);
 
-<<<<<<< HEAD
     }
 
     public void crossover (){
@@ -184,7 +183,6 @@ public class MainWindow extends Application {
     public void createChild(float[] genome){
 
         new Car(genome);
-=======
         //Call Crossover method
         //next step
         crossover(parents);
