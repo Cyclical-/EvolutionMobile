@@ -1,12 +1,23 @@
 package sim;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Shape;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import org.jbox2d.collision.shapes.CircleShape;
+import org.jbox2d.collision.shapes.PolygonShape;
+import org.jbox2d.collision.shapes.ShapeType;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
+import org.jbox2d.dynamics.Fixture;
 import org.jbox2d.dynamics.World;
 import sim.Ground;
 
@@ -21,26 +32,31 @@ public class MainWindow extends Application {
     public static final int WIDTH = 900;
     public static final int HEIGHT = 600;
 
+    private boolean north, south, east, west;
+    private Body[] bodyList;
+    private ArrayList<Shape> shapeList = new ArrayList<>();
+
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("EvolutionMobile");
         primaryStage.setWidth(WIDTH);
         primaryStage.setHeight(HEIGHT);
-
         Group root = new Group();
 
         Ground ground = new Ground(world);
         ground.createGround();
-<<<<<<< HEAD
 
         //Create gen 0 here
 
         bodyList = new Body[world.getBodyCount()];
-=======
->>>>>>> origin/master
         Body body = world.getBodyList();
+        for (int i = 0; i < world.getBodyCount(); i++) {
+            bodyList[i] = body;
+            body = body.getNext();
+        }
 
-<<<<<<< HEAD
+        draw(root);
+
         try {
             run();
         } catch (InterruptedException e) {
@@ -70,67 +86,147 @@ public class MainWindow extends Application {
                 case DOWN: south = false; break;
                 case LEFT: west = false; break;
                 case RIGHT: east = false; break;
-=======
-        while (body != null) {
-            float x1 = toPixelX(body.getPosition().x);
-            float y1 = toPixelY(body.getPosition().y);
-            Line line = new Line();
-            line.setStartX(x1);
-            line.setStartY(y1);
-            body = body.getNext();
-            float x2 = 0;
-            float y2 = 375;
-            if (body != null) {
-                x2 = toPixelX(body.getPosition().x);
-                y2 = toPixelY(body.getPosition().y);
->>>>>>> origin/master
             }
-            line.setEndX(x2);
-            line.setEndY(y2);
-            root.getChildren().add(line);
-        }
+        });
 
-        primaryStage.setScene(new Scene(root));
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
-    
+
     /**
      * run
-     * 
+     * sets up keyframes for every 1/60s
+     * @throws InterruptedException if thread is interrupted
      */
-    public void run() throws InterruptedException{
-    	while(true){
-    		Thread.sleep(1000/FPS);
-    		update();
-    		show();
-    	}
-    }
-    
-    public void update(){
-    	
-    }
-    
-    public void show(){
-    	
+    private void run() throws InterruptedException {
+        final Timeline timeline = new Timeline();
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        Duration duration = Duration.seconds(1.0 / FPS);
+        EventHandler<ActionEvent> actionEvent = terminate -> {
+            world.step(1.0f / FPS, 8, 3);
+            update();
+        };
+        KeyFrame keyFrame = new KeyFrame(duration, actionEvent, null, null);
+        timeline.getKeyFrames().add(keyFrame);
+        timeline.playFromStart();
     }
 
-    public static float toPixelX(float x) {
-        return x * 50f + 200f;
+    /**
+     * update
+     * moves shapes according to JBox2D world
+     */
+    private void update() {
+        if (north) {
+            for(Shape shape: shapeList) {
+                if (shape instanceof Line) {
+                    ((Line)shape).setStartY(((Line)shape).getStartY() + 5);
+                    ((Line)shape).setEndY(((Line)shape).getEndY() + 5);
+                } else if (shape instanceof Circle) {
+                    ((Circle)shape).setCenterY(((Circle)shape).getCenterY() + 5);
+                }
+            }
+        }
+        if (south) {
+            for(Shape shape: shapeList) {
+                if (shape instanceof Line) {
+                    ((Line)shape).setStartY(((Line)shape).getStartY() - 5);
+                    ((Line)shape).setEndY(((Line)shape).getEndY() - 5);
+                } else if (shape instanceof Circle) {
+                    ((Circle)shape).setCenterY(((Circle)shape).getCenterY() - 5);
+                }
+            }
+        }
+        if (east) {
+            for(Shape shape: shapeList) {
+                if (shape instanceof Line) {
+                    ((Line)shape).setStartX(((Line)shape).getStartX() - 5);
+                    ((Line)shape).setEndX(((Line)shape).getEndX() - 5);
+                } else if (shape instanceof Circle) {
+                    ((Circle)shape).setCenterX(((Circle)shape).getCenterX() - 5);
+                }
+            }
+        }
+        if (west) {
+            for(Shape shape: shapeList) {
+                if (shape instanceof Line) {
+                    ((Line)shape).setStartX(((Line)shape).getStartX() + 5);
+                    ((Line)shape).setEndX(((Line)shape).getEndX() + 5);
+                } else if (shape instanceof Circle) {
+                    ((Circle)shape).setCenterX(((Circle)shape).getCenterX() + 5);
+                }
+            }
+        }
     }
 
-    public static float toPixelY(float y) {
-        return HEIGHT - 250f - y * 50f;
+    /**
+     * draw
+     * draws shapes on scene
+     * @param root group that contains shapes
+     */
+    private void draw(Group root) {
+        for (Body body: bodyList) {
+            float x = toPixelX(body.getPosition().x);
+            float y = toPixelY(body.getPosition().y);
+            Fixture fixture = body.getFixtureList();
+            if (fixture.getType() == ShapeType.POLYGON) {
+                PolygonShape shape = (PolygonShape)fixture.getShape();
+                for (int i = 0; i < shape.getVertexCount() - 1; i++) {
+                    Line line = new Line();
+                    float x0 = toPixelX(shape.getVertex(i).x) + x + 200f;
+                    float y0 = toPixelY(shape.getVertex(i).y) + y - 900f;
+                    float x1 = toPixelX(shape.getVertex(i + 1).x) + x + 200f;
+                    float y1 = toPixelY(shape.getVertex(i + 1).y) + y - 900f;
+                    line.setStartX(x0);
+                    line.setStartY(y0);
+                    line.setEndX(x1);
+                    line.setEndY(y1);
+                    shapeList.add(line);
+                    root.getChildren().add(line);
+                }
+                Line line = new Line();
+                float x0 = toPixelX(shape.getVertex(shape.getVertexCount() - 1).x) + x + 200f;
+                float y0 = toPixelY(shape.getVertex(shape.getVertexCount() - 1).y) + y - 900f;
+                float x1 = toPixelX(shape.getVertex(0).x) + x + 200f;
+                float y1 = toPixelY(shape.getVertex(0).y) + y - 900f;
+                line.setStartX(x0);
+                line.setStartY(y0);
+                line.setEndX(x1);
+                line.setEndY(y1);
+                shapeList.add(line);
+                root.getChildren().add(line);
+            } else if (fixture.getType() == ShapeType.CIRCLE) {
+                Circle circle = new Circle();
+                CircleShape shape = (CircleShape)fixture.getShape();
+                circle.setRadius(shape.getRadius());
+                circle.setCenterX(x);
+                circle.setCenterY(y);
+                shapeList.add(circle);
+                root.getChildren().add(circle);
+            }
+        }
     }
 
-    public static float toPixelWidth(float width) {
-        return width * 50f;
+    /**
+     * toPixelX
+     * converts meters to pixels for x-values
+     * @param x x-value in meters
+     * @return x-value in pixels
+     */
+    private static float toPixelX(float x) {
+        return x * 50f;
     }
 
-    public static float toPixelHeight(float height) {
-        return height * 50f;
+    /**
+     * toPixelY
+     * converts meters to pixels for y-values
+     * @param y y-value in meters
+     * @return y-value in pixels
+     */
+    private static float toPixelY(float y) {
+        return HEIGHT - y * 50f;
     }
 
-    public float[][] rouletteSelection (ArrayList<Car> currentGen){
+    public float[][] rouletteSelection(ArrayList<Car> currentGen){
 
         //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
         double [][] fitnessScores = new double[20][2];
@@ -165,31 +261,28 @@ public class MainWindow extends Application {
             selectionNum = ((double) Math.random()*101);
 
             if ((selectionNum >= 0) && (selectionNum <= rouletteWheel[0])){
-                parents.add()
+                if (!currentGen.get(0).getSelected()) {
+                    parents.add(currentGen.get(0));
+                    currentGen.get(0).setSelected();
+                }
             }
-            for (int j = )
+            for (int j = 1; j < rouletteWheel.length; j++){
+                if ((selectionNum > rouletteWheel[j-1]) && (selectionNum <= rouletteWheel[j])){
+                    if (!currentGen.get(j).getSelected()) {
+                        parents.add(currentGen.get(1));
+                        currentGen.get(j).setSelected();
+                    }
+                }
+            }
         }while (parents.size() < 10);
 
-    }
-
-    public void crossover (){
-
-    }
-
-    public void mutation(){
-
-    }
-
-    public void createChild(float[] genome){
-
-        new Car(genome);
         //Call Crossover method
         //next step
-        crossover(parents);
-
+        float[][] childrenGenomes = crossover(parents);
+        return childrenGenomes;
     }
 
-    public void crossover (ArrayList<Car> parents){
+    public float [][] crossover (ArrayList<Car> parents){
         float[][] children = new float[20][22];
         int i = 0;
         for (int two = 0; two < 2; two++) {
@@ -231,10 +324,11 @@ public class MainWindow extends Application {
                 i += 2;
             }
         }
-        mutation(children);
+        float[][] childrenGenomes = mutation(children);
+        return childrenGenomes;
     }
 
-    public void mutation(float[][] children){
+    public float[][] mutation(float[][] children){
         final double MUTATION_RATE = 0.2;
         final double MUTATION_EFFECT = 0.2;
         for (int i = 0; i < children.length; i++) {
@@ -246,11 +340,17 @@ public class MainWindow extends Application {
                 }
             }
         }
+        return children;
     }
 
-    public void createNextGen(float[][] children){
+    public ArrayList<Car> createNextGen(float[][] childrenGenomes){
+        ArrayList<Car> nextGen = new ArrayList<>();
 
->>>>>>> parent of 781b1c2... create next gen method done
+        for (int i = 0; i < childrenGenomes.length; i++){
+            nextGen.add (new Car(childrenGenomes[i], world));
+        }
+
+        return nextGen;
     }
 
 
