@@ -32,37 +32,40 @@ public class MainWindow extends Application {
     public static final int WIDTH = 900;
     public static final int HEIGHT = 600;
 
+    public static int deadCars = 0;
+
     private boolean north, south, east, west;
+    private ArrayList<double[]> startShapes = new ArrayList<>();
     private Body[] bodyList;
     private ArrayList<Shape> shapeList = new ArrayList<>();
 
     @Override
     public void start(Stage primaryStage) {
+        //stage settings
         primaryStage.setTitle("EvolutionMobile");
         primaryStage.setWidth(WIDTH);
         primaryStage.setHeight(HEIGHT);
+
+        //root
         Group root = new Group();
 
+        //randomly generated terrain
         Ground ground = new Ground(world);
         ground.createGround();
 
-        bodyList = new Body[world.getBodyCount()];
-        Body body = world.getBodyList();
-        for (int i = 0; i < world.getBodyCount(); i++) {
-            bodyList[i] = body;
-            body = body.getNext();
-        }
+        //get starting positions of ground
+        getStartPos();
 
+        //draw bodies
         draw(root);
 
-        try {
-            run();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        //create array for every body
+        createBodyList();
 
+        //create scene
         Scene scene = new Scene(root);
 
+        //camera controls(key pressed)
         scene.setOnKeyPressed(event -> {
             switch (event.getCode()) {
                 case UP: north = true; break;
@@ -72,6 +75,7 @@ public class MainWindow extends Application {
             }
         });
 
+        //camera controls(key released)
         scene.setOnKeyReleased(event -> {
             switch (event.getCode()) {
                 case UP: north = false; break;
@@ -81,8 +85,21 @@ public class MainWindow extends Application {
             }
         });
 
+        //set scene
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        while (true) {
+
+
+            //evaluate
+            try {
+                run();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     /**
@@ -96,18 +113,17 @@ public class MainWindow extends Application {
         Duration duration = Duration.seconds(1.0 / FPS);
         EventHandler<ActionEvent> actionEvent = terminate -> {
             world.step(1.0f / FPS, 8, 3);
-            update();
+            camera();
         };
         KeyFrame keyFrame = new KeyFrame(duration, actionEvent, null, null);
         timeline.getKeyFrames().add(keyFrame);
         timeline.playFromStart();
     }
-
     /**
      * update
      * moves shapes according to JBox2D world
      */
-    private void update() {
+    private void camera() {
         if (north) {
             for(Shape shape: shapeList) {
                 if (shape instanceof Line) {
@@ -149,6 +165,24 @@ public class MainWindow extends Application {
             }
         }
     }
+
+    private void centerMap() {
+        int i = 0;
+        for(Shape shape: shapeList) {
+            double[] startShape = startShapes.get(i);
+            if (shape instanceof Line) {
+                ((Line)shape).setStartX(startShape[0]);
+                ((Line)shape).setEndX(startShape[1]);
+                ((Line)shape).setStartY(startShape[2]);
+                ((Line)shape).setEndY(startShape[3]);
+            } else if (shape instanceof Circle) {
+                ((Circle)shape).setCenterY(startShape[0]);
+                ((Circle)shape).setCenterX(startShape[1]);
+            }
+            i++;
+        }
+    }
+
 
     /**
      * draw
@@ -195,6 +229,31 @@ public class MainWindow extends Application {
                 shapeList.add(circle);
                 root.getChildren().add(circle);
             }
+        }
+    }
+
+    private void createBodyList() {
+        bodyList = new Body[world.getBodyCount()];
+        Body body = world.getBodyList();
+        for (int i = 0; i < world.getBodyCount(); i++) {
+            bodyList[i] = body;
+            body = body.getNext();
+        }
+    }
+
+    private void getStartPos() {
+        for (Shape shape: shapeList) {
+            double[] vertices = new double[4];
+            if (shape instanceof Line) {
+                vertices[0] = ((Line)shape).getStartX();
+                vertices[1] = ((Line)shape).getEndX();
+                vertices[2] = ((Line)shape).getStartY();
+                vertices[3] = ((Line)shape).getEndY();
+            } else if (shape instanceof Circle) {
+                vertices[0] = ((Circle)shape).getCenterX();
+                vertices[1] = ((Circle)shape).getCenterY();
+            }
+            startShapes.add(vertices);
         }
     }
 
