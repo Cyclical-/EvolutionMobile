@@ -30,9 +30,7 @@ public class Car {
 	private static final int MAX_CAR_HEALTH = Simulation.BOX2D_FPS * 10;
 
 	private Body chassis;
-	private Body wheel1;
-	private Body wheel2;
-	private Body wheel3;
+	private ArrayList<Body> wheels;
 	private World world;
 	private double score = 0;
 
@@ -59,7 +57,19 @@ public class Car {
 		this.world = world;
 		this.genome = new float[22];
 		this.definition = def;
+		this.wheels = new ArrayList<Body>();
 		writeGenome();
+		this.chassis = createChassis(this.definition.getVertices()); //create chassis
+		float carMass = this.chassis.getMass();
+        RevoluteJointDef jointDefinition = new RevoluteJointDef();
+		//create wheels
+		for (int i = 0; i < this.definition.getWheels().size(); i++){
+			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
+			carMass += this.wheels.get(i).getMass();
+			createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+		}        
+        
+		
 	}
 	
 	public Car(float[] genome, World world){
@@ -130,6 +140,9 @@ public class Car {
 	 * @return
 	 */
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
+		if (wheelDef.getVertex() == -1){
+			return null;
+		}
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(0F, 0F);
@@ -151,7 +164,6 @@ public class Car {
 
 	private void createJointForWheel(RevoluteJointDef jointDefinition, Body wheel, CarDefinition.WheelDefinition wheelDef, float torqueWheel) {
 		Vec2 randVec2 = this.definition.getVertices().get(wheelDef.getVertex());
-		
 		jointDefinition.localAnchorA = new Vec2(randVec2);
 		jointDefinition.localAnchorB = new Vec2(0F, 0F);
 		jointDefinition.maxMotorTorque = torqueWheel;
@@ -159,7 +171,6 @@ public class Car {
 		jointDefinition.enableMotor = true;
 		jointDefinition.bodyA = this.chassis;
 		jointDefinition.bodyB = wheel;
-
 		world.createJoint(jointDefinition);
 	}
 
@@ -187,7 +198,7 @@ public class Car {
 		}
 		// create chassis parts
 		for (int part = 1; part < sortedVertices.size(); part++) {
-			createChassisPart(body, sortedVertices.get(i - 1), sortedVertices.get(i));
+			createChassisPart(body, sortedVertices.get(part - 1), sortedVertices.get(part));
 		}
 		return body;
 	}
@@ -209,7 +220,7 @@ public class Car {
 
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = new PolygonShape();
-		fixtureDef.density = this.definition.CHASSIS_DENSITY;
+		fixtureDef.density = CarDefinition.CHASSIS_DENSITY;
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
@@ -240,7 +251,7 @@ public class Car {
 	/**
 	 * getSelected
 	 * 
-	 * @author Jonah Shapiro
+	 * @author Anthony Lai
 	 * @return
 	 */
 	public boolean getSelected() {
@@ -250,7 +261,7 @@ public class Car {
 	/**
 	 * setSelected
 	 * 
-	 * @author Jonah Shapiro
+	 * @author Anthony Lai
 	 */
 	public void setSelected() {
 		this.selected = true;
@@ -259,7 +270,7 @@ public class Car {
 	/**
 	 * getFitnessScore
 	 * 
-	 * @author Jonah Shapiro
+	 * @author Anthony Lai
 	 * @return
 	 */
 	public double getFitnessScore() {

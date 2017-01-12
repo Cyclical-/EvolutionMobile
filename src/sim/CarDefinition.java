@@ -11,7 +11,7 @@ import org.jbox2d.common.Vec2;
  */
 public class CarDefinition {
 	
-	private static final float MOTOR_SPEED = 20F;
+	public static final float MOTOR_SPEED = 20F;
 	
 	//chassis vector properties
 	private static final float MIN_ANGLE = 0F; 
