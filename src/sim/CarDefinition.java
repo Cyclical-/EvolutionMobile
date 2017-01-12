@@ -22,7 +22,7 @@ public class CarDefinition {
 	public static final int NUM_VERTICES = 8;
 	public static final float CHASSIS_DENSITY = 100F;
 	
-	private ArrayList<Vec2> vertices;
+	public ArrayList<Vec2> vertices;
 	
 	//wheel properties
 	private static final float MIN_WHEEL_RADIUS = 0.1F;
@@ -58,15 +58,18 @@ public class CarDefinition {
 	 * @return a CarDefinition containing a randomly generated car
 	 * 
 	 */
-	public CarDefinition createRandomCar(){
+	public static CarDefinition createRandomCar(){
+		ArrayList<Vec2> vertices = new ArrayList<Vec2>();
+		ArrayList<WheelDefinition> wheels = new ArrayList<WheelDefinition>();
+		CarDefinition def = new CarDefinition();
 		//generate chassis vectors
 		//divide the circle into equal parts
 		float segment = MAX_ANGLE/NUM_VERTICES;
-		this.vertices.add(new Vec2(0,0));
+		vertices.add(new Vec2(0,0));
 		for (int i = 0; i < NUM_VERTICES; i++){
 			float angle = Util.nextFloat((segment*i), (segment*(i+1)));
 			float magnitude = Util.nextFloat(MIN_MAGNITUDE, MAX_MAGNITUDE);
-			this.vertices.add(Util.polarToRectangular(magnitude, angle));
+			vertices.add(Util.polarToRectangular(magnitude, angle));
 		}
 		
 		//generate wheels
@@ -74,10 +77,11 @@ public class CarDefinition {
 			float radius = Util.nextFloat(MIN_WHEEL_RADIUS, MAX_WHEEL_RADIUS);
 			float density = WHEEL_DENSITY;
 			int vertex = Util.nextInt(-1, NUM_VERTICES-1);
-			this.wheels.add(new WheelDefinition(radius, density, vertex));
+			wheels.add(def.new WheelDefinition(radius, density, vertex));
 		}
-		
-		return this;
+		def.vertices = vertices;
+		def.wheels = wheels;
+		return def;
 	}
 	
 	
