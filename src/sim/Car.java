@@ -39,9 +39,8 @@ public class Car {
 	private float maxPositiony = 0F;
 	private float minPositiony = 0F;
 
-
 	public boolean alive;
-	
+
 	public CarDefinition definition;
 
 	private float[] genome;
@@ -98,13 +97,9 @@ public class Car {
 		ArrayList<Vec2> vertices = new ArrayList<Vec2>();
 		ArrayList<WheelDefinition> wheels = new ArrayList<WheelDefinition>();
 		for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
-			for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
-				float[] polar = new float[2];
-				polar[0] = this.genome[i*2];
-				polar[1] = this.genome[(i*2) + 1];
-				this.definition
-			}
+			vertices.add(Util.polarToRectangular(this.genome[i * 2], this.genome[(i * 2) + 1]));
 		}
+		for (int w = 0; w < )
 	}
 
 	/**
@@ -161,16 +156,14 @@ public class Car {
 		return false;
 
 	}
-	
-	public void kill(){
+
+	public void kill() {
 		this.world.destroyBody(this.chassis);
-		for (Body wheel : this.wheels){
+		for (Body wheel : this.wheels) {
 			this.world.destroyBody(wheel);
 		}
 		this.alive = false;
 	}
-
-	
 
 	/**
 	 * sortAngles
