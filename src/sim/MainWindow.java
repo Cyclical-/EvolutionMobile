@@ -170,6 +170,7 @@ public class MainWindow extends Application {
             for (int j = )
         }while (parents.size() < 10);
 
+<<<<<<< HEAD
     }
 
     public void crossover (){
@@ -183,6 +184,75 @@ public class MainWindow extends Application {
     public void createChild(float[] genome){
 
         new Car(genome);
+=======
+        //Call Crossover method
+        //next step
+        crossover(parents);
+
+    }
+
+    public void crossover (ArrayList<Car> parents){
+        float[][] children = new float[20][22];
+        int i = 0;
+        for (int two = 0; two < 2; two++) {
+            for (int j = 0; j < parents.size(); j++) {
+                Car temp = parents.get(j);
+                int random = (int) (Math.random() * parents.size());
+                parents.set(j, parents.get(random));
+                parents.set(random, temp);
+            }
+            for (int j = 0; j < parents.size(); j += 2) {
+                Car parent0 = parents.get(j);
+                Car parent1 = parents.get(j + 1);
+                int point0 = ((int) (Math.random() * 11) + 1) * 2 - 1;
+                int point1;
+                do {
+                    point1 = ((int) (Math.random() * 11) + 1) * 2 - 1;
+                } while (point0 == point1);
+                if (point0 > point1) {
+                    int temp = point0;
+                    point0 = point1;
+                    point1 = temp;
+                }
+                float[] genome0 = new float[22];
+                float[] genome1 = new float[22];
+                for (int k = 0; k < point0 - 1; k++) {
+                    genome0[k] = parent0.getGenome()[k];
+                    genome1[k] = parent1.getGenome()[k];
+                }
+                for (int k = point0 - 1; k < point1 - 1; k++) {
+                    genome0[k] = parent1.getGenome()[k];
+                    genome1[k] = parent0.getGenome()[k];
+                }
+                for (int k = point1 - 1; k < genome0.length; k++) {
+                    genome0[k] = parent0.getGenome()[k];
+                    genome1[k] = parent1.getGenome()[k];
+                }
+                children[i] = genome0;
+                children[i + 1] = genome1;
+                i += 2;
+            }
+        }
+        mutation(children);
+    }
+
+    public void mutation(float[][] children){
+        final double MUTATION_RATE = 0.2;
+        final double MUTATION_EFFECT = 0.2;
+        for (int i = 0; i < children.length; i++) {
+            for (int j = 0; j < children[i].length; j++) {
+                double random = Math.random();
+                if (random <= MUTATION_RATE) {
+                    float mutation = (float) (Math.random() * MUTATION_EFFECT * 2 - MUTATION_EFFECT);
+                    children[i][j] += mutation;
+                }
+            }
+        }
+    }
+
+    public void createNextGen(float[][] children){
+
+>>>>>>> parent of 781b1c2... create next gen method done
     }
 
 
