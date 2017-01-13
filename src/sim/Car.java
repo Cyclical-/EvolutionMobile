@@ -62,9 +62,11 @@ public class Car {
 		RevoluteJointDef jointDefinition = new RevoluteJointDef();
 		// create wheels
 		for (int i = 0; i < this.definition.getWheels().size(); i++) {
-			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
-			carMass += this.wheels.get(i).getMass();
-			createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+			if (this.definition.getWheels().get(i).getVertex() != -1) {
+				this.wheels.add(createWheel(this.definition.getWheels().get(i)));
+				carMass += this.wheels.get(i).getMass();
+				createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+			}
 		}
 		this.alive = true;
 
@@ -190,9 +192,6 @@ public class Car {
 	 * @return
 	 */
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
-		if (wheelDef.getVertex() == -1) {
-			return null;
-		}
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(0F, 0F);
