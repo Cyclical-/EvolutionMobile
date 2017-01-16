@@ -31,6 +31,7 @@ public class Car {
 
 	private Body chassis;
 	private ArrayList<Body> wheels;
+	private ArrayList<Vec2> vertices;
 	private World world;
 	private double score = 0;
 
@@ -56,16 +57,17 @@ public class Car {
 		this.genome = new float[22];
 		this.definition = def;
 		this.wheels = new ArrayList<Body>();
+		this.vertices = new ArrayList<Vec2>();
 		writeGenome();
 		this.chassis = createChassis(this.definition.getVertices()); // create chassis
 		float carMass = this.chassis.getMass();
-		RevoluteJointDef jointDefinition = new RevoluteJointDef();
 		// create wheels
 		for (int i = 0; i < this.definition.getWheels().size(); i++) {
 			if (this.definition.getWheels().get(i).getVertex() != -1) {
-				this.wheels.add(createWheel(this.definition.getWheels().get(i)));
-				carMass += this.wheels.get(i).getMass();
-				createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+				Body wheel = createWheel(this.definition.getWheels().get(i));
+				this.wheels.add(wheel);
+				carMass += wheel.getMass();
+				createJointForWheel(wheel, this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
 			}
 		}
 		this.alive = true;
@@ -77,14 +79,15 @@ public class Car {
 		this.genome = genome;
 		this.definition = createDefinition();
 		this.wheels = new ArrayList<Body>();
+		this.vertices = new ArrayList<Vec2>();
 		this.chassis = createChassis(this.definition.getVertices()); // create chassis
 		float carMass = this.chassis.getMass();
-		RevoluteJointDef jointDefinition = new RevoluteJointDef();
 		// create wheels
 		for (int i = 0; i < this.definition.getWheels().size(); i++) {
+			RevoluteJointDef jointDefinition = new RevoluteJointDef();
 			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
 			carMass += this.wheels.get(i).getMass();
-			createJointForWheel(jointDefinition, this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
+			createJointForWheel(this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
 		}
 		this.alive = true;
 	}
@@ -168,6 +171,76 @@ public class Car {
 	}
 
 	/**
+	 * createWheel
+	 * 
+	 * @author Jonah Shapiro
+	 * @param wheelDefinition
+	 * @return
+	 */
+	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyType.DYNAMIC;
+		bodyDef.position = new Vec2(1F, 4F);
+
+		Body body = world.createBody(bodyDef);
+
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = new CircleShape();
+		fixtureDef.shape.setRadius(wheelDef.getRadius());
+		fixtureDef.density = wheelDef.getDensity();
+		fixtureDef.friction = 1F;
+		fixtureDef.restitution = 0.2F;
+		fixtureDef.filter.groupIndex = -1;
+
+		body.createFixture(fixtureDef);
+
+		return body;
+		
+	}
+
+	private void createJointForWheel(Body wheel, CarDefinition.WheelDefinition wheelDef, float torqueWheel) {
+		RevoluteJointDef jointDefinition = new RevoluteJointDef();
+		Vec2 randVec2 = this.definition.getVertices().get(wheelDef.getVertex());
+		jointDefinition.bodyA = this.chassis;
+		jointDefinition.bodyB = wheel;
+		jointDefinition.localAnchorA = randVec2;
+		jointDefinition.localAnchorB = new Vec2(0F, 0F);
+		jointDefinition.maxMotorTorque = torqueWheel;
+		jointDefinition.motorSpeed = -CarDefinition.MOTOR_SPEED;
+		jointDefinition.enableMotor = true;
+		jointDefinition.referenceAngle = chassis.getAngle();
+		world.createJoint(jointDefinition);
+	}
+
+	/**
+	 * createChassis
+	 * 
+	 * @author Jonah Shapiro
+	 * @param vertices
+	 * @return
+	 */
+	private Body createChassis(ArrayList<Vec2> vertices) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyType.DYNAMIC;
+		bodyDef.position = new Vec2(1.0F, 4.0F);
+		Body body = world.createBody(bodyDef);
+		HashMap<Float, Float> points = new HashMap<Float, Float>();
+		for (int i = 0; i < vertices.size(); i++) {
+			float[] polar = Util.rectangularToPolar(vertices.get(i));
+			points.put(polar[1], polar[0]); // key is angle, value is magnitude
+		}
+		ArrayList<Float> sorted = sortAngles(vertices);
+		for (int i = 0; i < sorted.size(); i++) {
+			this.vertices.add(Util.polarToRectangular(points.get(sorted.get(i)), sorted.get(i)));
+		}
+		// create chassis parts
+		for (int part = 1; part < this.vertices.size(); part++) {
+			createChassisPart(body, this.vertices.get(part - 1), this.vertices.get(part));
+		}
+		return body;
+	}
+
+	/**
 	 * sortAngles
 	 * 
 	 * @author Jonah Shapiro
@@ -185,74 +258,6 @@ public class Car {
 	}
 
 	/**
-	 * createWheel
-	 * 
-	 * @author Jonah Shapiro
-	 * @param wheelDefinition
-	 * @return
-	 */
-	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
-		BodyDef bodyDef = new BodyDef();
-		bodyDef.type = BodyType.DYNAMIC;
-		bodyDef.position = new Vec2(0F, 0F);
-
-		Body body = world.createBody(bodyDef);
-
-		FixtureDef fixtureDef = new FixtureDef();
-		fixtureDef.shape = new CircleShape();
-		fixtureDef.shape.setRadius(wheelDef.getRadius());
-		fixtureDef.density = wheelDef.getDensity();
-		fixtureDef.friction = 1F;
-		fixtureDef.restitution = 0.2F;
-		fixtureDef.filter.groupIndex = -1;
-
-		body.createFixture(fixtureDef);
-
-		return body;
-	}
-
-	private void createJointForWheel(RevoluteJointDef jointDefinition, Body wheel, CarDefinition.WheelDefinition wheelDef, float torqueWheel) {
-		Vec2 randVec2 = this.definition.getVertices().get(wheelDef.getVertex());
-		jointDefinition.localAnchorA = new Vec2(randVec2);
-		jointDefinition.localAnchorB = new Vec2(0F, 0F);
-		jointDefinition.maxMotorTorque = torqueWheel;
-		jointDefinition.motorSpeed = -CarDefinition.MOTOR_SPEED;
-		jointDefinition.enableMotor = true;
-		jointDefinition.bodyA = this.chassis;
-		jointDefinition.bodyB = wheel;
-		world.createJoint(jointDefinition);
-	}
-
-	/**
-	 * createChassis
-	 * 
-	 * @author Jonah Shapiro
-	 * @param vertices
-	 * @return
-	 */
-	private Body createChassis(ArrayList<Vec2> vertices) {
-		BodyDef bodyDef = new BodyDef();
-		bodyDef.type = BodyType.DYNAMIC;
-		bodyDef.position = new Vec2(0.0F, 4.0F);
-		Body body = world.createBody(bodyDef);
-		HashMap<Float, Float> points = new HashMap<Float, Float>();
-		for (int i = 0; i < vertices.size(); i++) {
-			float[] polar = Util.rectangularToPolar(vertices.get(i));
-			points.put(polar[1], polar[0]); // key is angle, value is magnitude
-		}
-		ArrayList<Float> sorted = sortAngles(vertices);
-		ArrayList<Vec2> sortedVertices = new ArrayList<Vec2>();
-		for (int i = 0; i < sorted.size(); i++) {
-			sortedVertices.add(Util.polarToRectangular(points.get(sorted.get(i)), sorted.get(i)));
-		}
-		// create chassis parts
-		for (int part = 1; part < sortedVertices.size(); part++) {
-			createChassisPart(body, sortedVertices.get(part - 1), sortedVertices.get(part));
-		}
-		return body;
-	}
-
-	/**
 	 * createChassisPart
 	 * 
 	 * @author Jonah Shapiro
@@ -261,19 +266,20 @@ public class Car {
 	 * @param two
 	 */
 	private void createChassisPart(Body body, Vec2 one, Vec2 two) {
-		ArrayList<Vec2> listOfVertices = new ArrayList<>(3);
+		Vec2[] listOfVertices = new Vec2[3];
 
-		listOfVertices.add(one);
-		listOfVertices.add(two);
-		listOfVertices.add(new Vec2(0, 0));
+		listOfVertices[0] = one;
+		listOfVertices[1] = two;
+		listOfVertices[2] = new Vec2(0, 0);
+		PolygonShape s = new PolygonShape();
+		s.set(listOfVertices, 3);
 
 		FixtureDef fixtureDef = new FixtureDef();
-		fixtureDef.shape = new PolygonShape();
+		fixtureDef.shape = s;
 		fixtureDef.density = CarDefinition.CHASSIS_DENSITY;
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
-		((PolygonShape) fixtureDef.shape).set(listOfVertices.toArray(new Vec2[0]), 3);
 		body.createFixture(fixtureDef);
 	}
 
