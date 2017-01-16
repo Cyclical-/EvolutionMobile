@@ -85,7 +85,7 @@ public class CarDefinition {
 		for (int w = 0; w < NUM_WHEELS; w++){
 			float radius = Util.nextFloat(MIN_WHEEL_RADIUS, MAX_WHEEL_RADIUS);
 			float density = WHEEL_DENSITY;
-			int vertex = Util.nextInt(-1, NUM_VERTICES-1);
+			int vertex = Util.nextInt(-1, NUM_VERTICES);
 			wheels.add(def.new WheelDefinition(radius, density, vertex));
 		}
 		def.vertices = vertices;

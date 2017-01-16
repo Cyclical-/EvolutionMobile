@@ -12,7 +12,7 @@ public class Util {
 	}	
 	
 	public static int nextInt(int minValue, int maxValue){
-		return (new SecureRandom().nextInt() * (maxValue - minValue)) + minValue; 
+		return (new SecureRandom().nextInt(maxValue - minValue)) + minValue; 
 	}
 	
 	
