@@ -33,4 +33,12 @@ public class Util {
 		return polar;
 	}
 
+	public static float toPixelX(float x) {
+		return x * 50f;
+	}
+
+	public static float toPixelY(float y) {
+		return 600 - y * 50f;
+	}
+
 }
