@@ -115,7 +115,7 @@ public class MainWindow extends Application {
     private void runGeneticAlgorithm(Group root) {
         Car car = new Car(CarDefinition.createRandomCar(), world);
         if (generation > 0) {
-            car = new Car(genome[generation], world);
+            car = new Car(genome[carNumber], world);
         }
         createBodyList();
         drawCar(root);
@@ -136,7 +136,8 @@ public class MainWindow extends Application {
             carNumber++;
             if (carNumber == 20) {
                 genome = rouletteSelection(genome, distance);
-                generation = 0;
+                generation++;
+                carNumber = 0;
             }
             runGeneticAlgorithm(root);
         }
