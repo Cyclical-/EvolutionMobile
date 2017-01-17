@@ -1,8 +1,11 @@
 package sim;
 
+import java.awt.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.TreeMap;
 
 import javax.smartcardio.Card;
 
@@ -17,6 +20,7 @@ import org.jbox2d.dynamics.World;
 import org.jbox2d.dynamics.joints.RevoluteJointDef;
 
 import sim.CarDefinition.WheelDefinition;
+import sun.reflect.generics.tree.Tree;
 
 /**
  * 
@@ -25,7 +29,6 @@ import sim.CarDefinition.WheelDefinition;
  */
 public class Car {
 
-	// TODO: Change chassis part sorting to use a SortedHashMap
 
 	private static final int MAX_CAR_HEALTH = Simulation.BOX2D_FPS * 10;
 
@@ -84,7 +87,6 @@ public class Car {
 		float carMass = this.chassis.getMass();
 		// create wheels
 		for (int i = 0; i < this.definition.getWheels().size(); i++) {
-			RevoluteJointDef jointDefinition = new RevoluteJointDef();
 			this.wheels.add(createWheel(this.definition.getWheels().get(i)));
 			carMass += this.wheels.get(i).getMass();
 			createJointForWheel(this.wheels.get(i), this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius())));
@@ -134,6 +136,8 @@ public class Car {
 
 	public boolean checkDeath() {
 		Vec2 position = this.getPosition();
+		System.out.println("f");
+
 
 		if (position.y > this.maxPositiony) {
 			this.maxPositiony = position.y;
@@ -180,7 +184,7 @@ public class Car {
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
-		bodyDef.position = new Vec2(1F, 4F);
+		bodyDef.position = new Vec2(0F, 0F);
 
 		Body body = world.createBody(bodyDef);
 
@@ -208,7 +212,6 @@ public class Car {
 		jointDefinition.maxMotorTorque = torqueWheel;
 		jointDefinition.motorSpeed = -CarDefinition.MOTOR_SPEED;
 		jointDefinition.enableMotor = true;
-		jointDefinition.referenceAngle = chassis.getAngle();
 		world.createJoint(jointDefinition);
 	}
 
@@ -224,38 +227,26 @@ public class Car {
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(1.0F, 4.0F);
 		Body body = world.createBody(bodyDef);
-		HashMap<Float, Float> points = new HashMap<Float, Float>();
+		TreeMap<Float, Float> points = new TreeMap<Float, Float>();
 		for (int i = 0; i < vertices.size(); i++) {
 			float[] polar = Util.rectangularToPolar(vertices.get(i));
 			points.put(polar[1], polar[0]); // key is angle, value is magnitude
 		}
-		ArrayList<Float> sorted = sortAngles(vertices);
-		for (int i = 0; i < sorted.size(); i++) {
-			this.vertices.add(Util.polarToRectangular(points.get(sorted.get(i)), sorted.get(i)));
+		ArrayList<Vec2> sorted = new ArrayList<Vec2>();
+		ArrayList<Float> keys = new ArrayList<Float>();
+		for (Float f : points.keySet()){
+			keys.add(f);
+		}
+		for (int i = 0; i < points.size(); i++) {
+			sorted.add(Util.polarToRectangular(points.get(keys.get(i)), keys.get(i)));
 		}
 		// create chassis parts
-		for (int part = 1; part < this.vertices.size(); part++) {
-			createChassisPart(body, this.vertices.get(part - 1), this.vertices.get(part));
+		for (int part = 1; part  <sorted.size(); part++) {
+			createChassisPart(body, sorted.get(part - 1), sorted.get(part));
 		}
 		return body;
 	}
 
-	/**
-	 * sortAngles
-	 * 
-	 * @author Jonah Shapiro
-	 * @param vertices
-	 * @return
-	 */
-	private ArrayList<Float> sortAngles(ArrayList<Vec2> vertices) {
-		ArrayList<Float> angles = new ArrayList<Float>();
-		for (int i = 0; i < vertices.size(); i++) {
-			float[] polar = Util.rectangularToPolar(vertices.get(i));
-			angles.add(new Float(polar[1]));
-		}
-		Collections.sort(angles);
-		return angles;
-	}
 
 	/**
 	 * createChassisPart
@@ -267,20 +258,20 @@ public class Car {
 	 */
 	private void createChassisPart(Body body, Vec2 one, Vec2 two) {
 		Vec2[] listOfVertices = new Vec2[3];
-
 		listOfVertices[0] = one;
 		listOfVertices[1] = two;
-		listOfVertices[2] = new Vec2(0, 0);
+		listOfVertices[2] = new Vec2(0,0);
 		PolygonShape s = new PolygonShape();
 		s.set(listOfVertices, 3);
-
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = s;
 		fixtureDef.density = CarDefinition.CHASSIS_DENSITY;
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
-		fixtureDef.filter.groupIndex = -1;
+		fixtureDef.filter.groupIndex = 0;
+		
 		body.createFixture(fixtureDef);
+		
 	}
 
 	/**

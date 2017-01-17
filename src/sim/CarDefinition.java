@@ -21,7 +21,7 @@ public class CarDefinition {
 	private static final float MIN_ANGLE = 0F; 
 	private static final float MAX_ANGLE = (float) (Math.PI * 2);
 	private static final float MIN_MAGNITUDE = 0.1F;
-	private static final float MAX_MAGNITUDE = 1.5F;
+	private static final float MAX_MAGNITUDE = 1.0F;
 	private static final double MAGNITUDE_MULTIPLIER = 3.0;
 	public static final int NUM_VERTICES = 8;
 	public static final float CHASSIS_DENSITY = 100F;
@@ -82,7 +82,7 @@ public class CarDefinition {
 			float magnitude = Util.nextFloat(MIN_MAGNITUDE, MAX_MAGNITUDE);
 			vertices.add(Util.polarToRectangular(magnitude, angle));
 		}
-		List<Integer> left = Stream.of(-1,-1,0,1,2,3,4,5,6,7).collect(Collectors.toList());
+		List<Integer> left = Stream.of(-1,-1,-1,0,1,2,3,4,5,6,7).collect(Collectors.toList());
 		Random r = new Random();
 		//generate wheels
 		for (int w = 0; w < NUM_WHEELS; w++){
