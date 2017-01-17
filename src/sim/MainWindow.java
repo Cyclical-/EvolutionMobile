@@ -122,7 +122,7 @@ public class MainWindow extends Application {
         //evaluate
         final Timeline timeline = new Timeline();
         try {
-            evaluate(timeline);
+            evaluate(timeline, car);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -149,13 +149,14 @@ public class MainWindow extends Application {
      * @author Kevin Chik
      * @throws InterruptedException if thread is interrupted
      */
-    private void evaluate(Timeline timeline) throws InterruptedException {
+    private void evaluate(Timeline timeline, Car car) throws InterruptedException {
         timeline.setCycleCount(Timeline.INDEFINITE);
         Duration duration = Duration.seconds(1.0 / FPS);
         EventHandler<ActionEvent> actionEvent = terminate -> {
             world.step(1.0f / FPS, 8, 3);
             createBodyList();
             update();
+            car.checkDeath();
         };
         KeyFrame keyFrame = new KeyFrame(duration, actionEvent, null, null);
         timeline.getKeyFrames().add(keyFrame);
