@@ -141,22 +141,22 @@ public class MainWindow extends Application {
             world.step(1.0f / FPS, 8, 3);
             createBodyList();
             update();
+            centerMap();
 
             if (car.checkDeath()) {
-                genome[carNumber] = car.getGenome();
-                distance[carNumber] = car.getFitnessScore();
-                car.kill();
-                timeline.pause();
-                centerMap();
-                carNumber++;
-                if (carNumber == 20) {
-                    genome = rouletteSelection(genome, distance);
-                    generation++;
-                    carNumber = 0;
-                }
+                    genome[carNumber] = car.getGenome();
+                    distance[carNumber] = car.getFitnessScore();
+                    centerMap();
+                    car.kill();
+                    timeline.pause();
+                    carNumber++;
+                    if (carNumber == 20) {
+                        genome = rouletteSelection(genome, distance);
+                        generation++;
+                        carNumber = 0;
+                    }
                 runGeneticAlgorithm(root);
             }
-
         };
         KeyFrame keyFrame = new KeyFrame(duration, actionEvent, null, null);
         timeline.getKeyFrames().add(keyFrame);
