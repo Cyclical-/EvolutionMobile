@@ -1,13 +1,12 @@
 package sim;
 
+import javafx.scene.paint.Color;
 import java.awt.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeMap;
-
-import javax.smartcardio.Card;
 
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.PolygonShape;
@@ -18,11 +17,9 @@ import org.jbox2d.dynamics.BodyType;
 import org.jbox2d.dynamics.FixtureDef;
 import org.jbox2d.dynamics.World;
 import org.jbox2d.dynamics.joints.Joint;
-import org.jbox2d.dynamics.joints.RevoluteJoint;
 import org.jbox2d.dynamics.joints.RevoluteJointDef;
 
 import sim.CarDefinition.WheelDefinition;
-import sun.reflect.generics.tree.Tree;
 
 /**
  * 
@@ -36,7 +33,6 @@ public class Car {
 
 	private Body chassis;
 	private ArrayList<Body> wheels;
-	private ArrayList<Vec2> vertices;
 	private ArrayList<Joint> joints;
 	private World world;
 	private double score = 0;
@@ -63,7 +59,6 @@ public class Car {
 		this.genome = new float[22];
 		this.definition = def;
 		this.wheels = new ArrayList<Body>();
-		this.vertices = new ArrayList<Vec2>();
 		this.joints = new ArrayList<Joint>();
 		writeGenome();
 		this.chassis = createChassis(this.definition.getVertices()); // create chassis
@@ -86,7 +81,6 @@ public class Car {
 		this.genome = genome;
 		this.definition = createDefinition();
 		this.wheels = new ArrayList<Body>();
-		this.vertices = new ArrayList<Vec2>();
 		this.joints = new ArrayList<Joint>();
 		this.chassis = createChassis(this.definition.getVertices()); // create chassis
 		float carMass = this.chassis.getMass();
@@ -114,7 +108,7 @@ public class Car {
 			def.addVertex(Util.polarToRectangular(this.genome[i * 2], this.genome[(i * 2) + 1]));
 		}
 		for (int w = 0; w < CarDefinition.NUM_WHEELS; w++){
-			def.addWheel(def.new WheelDefinition(this.genome[(w*2) + (CarDefinition.NUM_VERTICES * 2)], CarDefinition.WHEEL_DENSITY, (int)this.genome[(w*3) + 1 + (CarDefinition.NUM_VERTICES * 2)]));
+			def.addWheel(def.new WheelDefinition(this.genome[(w*2) + (CarDefinition.NUM_VERTICES * 2)], Util.nextFloat(50, 100), (int)this.genome[(w*2) + 1 + (CarDefinition.NUM_VERTICES * 2)]));
 		}
 		return def;
 	}
@@ -146,8 +140,6 @@ public class Car {
 
 	public boolean checkDeath() {
 		Vec2 position = this.getPosition();
-		System.out.println(this.health);
-
 
 		if (position.y > this.maxPositiony) {
 			this.maxPositiony = position.y;
@@ -156,13 +148,22 @@ public class Car {
 		if (position.y < minPositiony) {
 			this.minPositiony = position.y;
 		}
+		
+		if (position.x < 0.0F){
+			return true;
+		}
+		if (position.x > 300){
+			this.maxPositionx = 300;
+			return true;
+
+		}
 
 		if (position.x > maxPositionx + 0.02f) {
 			this.health = MAX_CAR_HEALTH;
 			this.maxPositionx = position.x;
 		} else {
 			if (Math.abs(this.chassis.getLinearVelocity().x) < 0.01f) {
-				this.health -= 3;
+				this.health -= 2;
 			}
 			if (position.x > maxPositionx) {
 				this.maxPositionx = position.x;
@@ -177,13 +178,13 @@ public class Car {
 	}
 
 	public void kill() {
-		this.world.destroyBody(this.chassis);
-		for (Body wheel : this.wheels) {
-			this.world.destroyBody(wheel);
-		}
 		for (Joint j : this.joints){
 			this.world.destroyJoint(j);
 		}
+		for (Body wheel : this.wheels) {
+			this.world.destroyBody(wheel);
+		}
+		this.world.destroyBody(this.chassis);
 		this.alive = false;
 	}
 
@@ -198,9 +199,7 @@ public class Car {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(0F, 0F);
-
 		Body body = world.createBody(bodyDef);
-
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = new CircleShape();
 		fixtureDef.shape.setRadius(wheelDef.getRadius());
@@ -254,7 +253,7 @@ public class Car {
 			sorted.add(Util.polarToRectangular(points.get(keys.get(i)), keys.get(i)));
 		}
 		// create chassis parts
-		for (int part = 1; part  <sorted.size(); part++) {
+		for (int part = 1; part  < sorted.size(); part++) {
 			createChassisPart(body, sorted.get(part - 1), sorted.get(part));
 		}
 		return body;
@@ -282,7 +281,7 @@ public class Car {
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
-		
+		fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1), 0.5));
 		body.createFixture(fixtureDef);
 		
 	}

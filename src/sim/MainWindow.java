@@ -20,6 +20,7 @@ import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
 import org.jbox2d.dynamics.World;
+
 import java.util.ArrayList;
 
 /**
@@ -49,7 +50,7 @@ public class MainWindow extends Application {
 
     //body list
     private Body[] bodyList;
-    private ArrayList<Shape[][]> shapeList = new ArrayList<>();
+    private Shape[][][] shapeList;
     private ArrayList<double[]> startShapes = new ArrayList<>();
 
     /**
@@ -72,7 +73,7 @@ public class MainWindow extends Application {
         Ground ground = new Ground(world);
         ground.createGround();
         createBodyList();
-        drawGround(root);
+        createShapeList();
         getStartPos();
 
         //create scene
@@ -113,12 +114,16 @@ public class MainWindow extends Application {
      * @param root group that contains all shapes to be displayed
      */
     private void runGeneticAlgorithm(Group root) {
-        Car car = new Car(CarDefinition.createRandomCar(), world);
+        Car car;
         if (generation > 0) {
-            car = new Car(genome[carNumber], world);
+            car = new Car(genome[generation], world);
+        } else {
+            car = new Car(CarDefinition.createRandomCar(), world);
         }
         createBodyList();
+        createShapeList();
         drawCar(root);
+        drawGround(root);
         //evaluate
         final Timeline timeline = new Timeline();
         try {
@@ -131,7 +136,7 @@ public class MainWindow extends Application {
     /**
      * evaluate
      * sets up keyframes for every 1/60s
-     * @author Kevin Chik
+     * @author Kevin Chik and Anthony Lai
      * @throws InterruptedException if thread is interrupted
      */
     private void evaluate(Timeline timeline, Car car, Group root) throws InterruptedException {
@@ -141,20 +146,27 @@ public class MainWindow extends Application {
             world.step(1.0f / FPS, 8, 3);
             createBodyList();
             update();
-            centerMap();
-
             if (car.checkDeath()) {
-                    genome[carNumber] = car.getGenome();
-                    distance[carNumber] = car.getFitnessScore();
-                    centerMap();
-                    car.kill();
-                    timeline.pause();
-                    carNumber++;
-                    if (carNumber == 20) {
-                        genome = rouletteSelection(genome, distance);
-                        generation++;
-                        carNumber = 0;
+                genome[carNumber] = car.getGenome();
+                distance[carNumber] = car.getFitnessScore();
+                centerMap();
+                for (Shape[][] body : shapeList) {
+                    if (body.length < 4) {
+                        for (Shape[] fixture : body) {
+                            for (Shape line : fixture) {
+                                root.getChildren().remove(line);
+                            }
+                        }
                     }
+                }
+                car.kill();
+                timeline.pause();
+                carNumber++;
+                if (carNumber == 20) {
+                    genome = rouletteSelection(genome, distance);
+                    generation++;
+                    carNumber = 0;
+                }
                 runGeneticAlgorithm(root);
             }
         };
@@ -169,58 +181,62 @@ public class MainWindow extends Application {
      * @author Kevin Chik
      */
     private void update() {
-        int bodyIndex = shapeList.size() - 1;
-        for (Body body: bodyList) {
-            float x = Util.toPixelX(body.getPosition().x) + camera[1] + 200f;
-            float y = Util.toPixelY(body.getPosition().y) + camera[0] - 900f;
-            Fixture fixture = body.getFixtureList();
-            int fixtureCount = 0;
-            do {
-                fixtureCount++;
-                fixture = fixture.getNext();
-            } while (fixture != null);
-            fixture = body.getFixtureList();
-            int fixtureIndex = 0;
-            for (int j = 0; j < fixtureCount; j++) {
+        camera();
+        for (int i = 0; i < shapeList.length; i++) {
+            float x = Util.toPixelX(bodyList[i].getPosition().x) + camera[1] + 200f;
+            float y = Util.toPixelY(bodyList[i].getPosition().y) + camera[0] - 900f;
+            float angle = -(bodyList[i].getTransform().q.getAngle());
+            Fixture fixture = bodyList[i].getFixtureList();
+            for (int j = 0; j < shapeList[i].length; j++) {
                 if (fixture.getType() == ShapeType.POLYGON) {
-                    PolygonShape shape = (PolygonShape) fixture.getShape();
-                    if (shape.getVertexCount() < 4) {
-                        for (int i = 0; i < shape.getVertexCount() - 1; i++) {
-                            Line line = (Line) shapeList.get(bodyIndex)[fixtureIndex][i];
-                            float x0 = Util.toPixelX(shape.getVertex(i).x) + x;
-                            float y0 = Util.toPixelY(shape.getVertex(i).y) + y;
-                            float x1 = Util.toPixelX(shape.getVertex(i + 1).x) + x;
-                            float y1 = Util.toPixelY(shape.getVertex(i + 1).y) + y;
-                            line.setStartX(x0);
-                            line.setStartY(y0);
-                            line.setEndX(x1);
-                            line.setEndY(y1);
-                        }
-                        Line line = (Line) shapeList.get(bodyIndex)[fixtureIndex][shape.getVertexCount() - 1];
-                        float x0 = Util.toPixelX(shape.getVertex(shape.getVertexCount() - 1).x) + x;
-                        float y0 = Util.toPixelY(shape.getVertex(shape.getVertexCount() - 1).y) + y;
-                        float x1 = Util.toPixelX(shape.getVertex(0).x) + x;
-                        float y1 = Util.toPixelY(shape.getVertex(0).y) + y;
-                        line.setStartX(x0);
-                        line.setStartY(y0);
-                        line.setEndX(x1);
-                        line.setEndY(y1);
+                    PolygonShape shape = (PolygonShape)fixture.getShape();
+                    int k = 0;
+                    for (; k < shapeList[i][j].length - 1; k++) {
+                        Line line = ((Line)shapeList[i][j][k]);
+                        float x0 = shape.getVertex(k).x;
+                        float y0 = shape.getVertex(k).y;
+                        float ax0 = (float) (Math.sin(angle) * y0 + Math.cos(angle) * x0);
+                        float ay0 = (float) (Math.cos(angle) * y0 - Math.sin(angle) * x0);
+                        float x1 = shape.getVertex(k + 1).x;
+                        float y1 = shape.getVertex(k + 1).y;
+                        float ax1 = (float) (Math.sin(angle) * y1 + Math.cos(angle) * x1);
+                        float ay1 = (float) (Math.cos(angle) * y1 - Math.sin(angle) * x1);
+                        line.setStartX(Util.toPixelX(ax0) + x);
+                        line.setStartY(Util.toPixelY(ay0) + y);
+                        line.setEndX(Util.toPixelX(ax1) + x);
+                        line.setEndY(Util.toPixelY(ay1) + y);
+                        shapeList[i][j][k] = line;
                     }
+                    Line line = ((Line)shapeList[i][j][k]);
+                    float x0 = shape.getVertex(0).x;
+                    float y0 = shape.getVertex(0).y;
+                    float ax0 = (float) (Math.sin(angle) * y0 + Math.cos(angle) * x0);
+                    float ay0 = (float) (Math.cos(angle) * y0 - Math.sin(angle) * x0);
+                    float x1 = shape.getVertex(k).x;
+                    float y1 = shape.getVertex(k).y;
+                    float ax1 = (float) (Math.sin(angle) * y1 + Math.cos(angle) * x1);
+                    float ay1 = (float) (Math.cos(angle) * y1 - Math.sin(angle) * x1);
+                    line.setStartX(Util.toPixelX(ax0) + x);
+                    line.setStartY(Util.toPixelY(ay0) + y);
+                    line.setEndX(Util.toPixelX(ax1) + x);
+                    line.setEndY(Util.toPixelY(ay1) + y);
+                    shapeList[i][j][k] = line;
                 } else if (fixture.getType() == ShapeType.CIRCLE) {
-                    CircleShape shape = (CircleShape) fixture.getShape();
-                    Circle circle = (Circle) shapeList.get(bodyIndex)[fixtureIndex][0];
+                    CircleShape shape = (CircleShape)fixture.getShape();
+                    Circle circle = ((Circle)shapeList[i][j][0]);
                     circle.setFill(Color.TRANSPARENT);
                     circle.setStroke(Color.BLACK);
                     circle.setRadius(shape.getRadius() * 50f);
+//                    float ax = (float) (Math.sin(angle) * y + Math.cos(angle) * x);
+//                    float ay = (float) (Math.cos(angle) * y - Math.sin(angle) * x);
                     circle.setCenterX(x);
                     circle.setCenterY(y + 600f);
+                    shapeList[i][j][0] = circle;
                 }
                 fixture = fixture.getNext();
-                fixtureIndex++;
             }
-            bodyIndex--;
         }
-        camera();
+
     }
 
     /**
@@ -231,63 +247,15 @@ public class MainWindow extends Application {
     private void camera() {
         if (north) {
             camera[0] += 5;
-            for (Shape[][] shape: shapeList) {
-                for (Shape[] fixture: shape) {
-                    if (fixture.length > 3) {
-                        for (Shape line : fixture) {
-                            if (line instanceof Line) {
-                                ((Line) line).setStartY(((Line) line).getStartY() + 5);
-                                ((Line) line).setEndY(((Line) line).getEndY() + 5);
-                            }
-                        }
-                    }
-                }
-            }
         }
         if (south) {
             camera[0] -= 5;
-            for (Shape[][] shape: shapeList) {
-                for (Shape[] fixture: shape) {
-                    for (Shape line : fixture) {
-                        if (line instanceof Line) {
-                            ((Line) line).setStartY(((Line) line).getStartY() - 5);
-                            ((Line) line).setEndY(((Line) line).getEndY() - 5);
-                        } else if (line instanceof Circle) {
-                            ((Circle) line).setCenterY(((Circle) line).getCenterY() - 5);
-                        }
-                    }
-                }
-            }
         }
         if (east) {
             camera[1] -= 5;
-            for (Shape[][] shape: shapeList) {
-                for (Shape[] fixture : shape) {
-                    for (Shape line : fixture) {
-                        if (line instanceof Line) {
-                            ((Line) line).setStartX(((Line) line).getStartX() - 5);
-                            ((Line) line).setEndX(((Line) line).getEndX() - 5);
-                        } else if (line instanceof Circle) {
-                            ((Circle) line).setCenterX(((Circle) line).getCenterX() - 5);
-                        }
-                    }
-                }
-            }
         }
         if (west) {
             camera[1] += 5;
-            for (Shape[][] shape: shapeList) {
-                for (Shape[] fixture : shape) {
-                    for (Shape line : fixture) {
-                        if (line instanceof Line) {
-                            ((Line) line).setStartX(((Line) line).getStartX() + 5);
-                            ((Line) line).setEndX(((Line) line).getEndX() + 5);
-                        } else if (line instanceof Circle) {
-                            ((Circle) line).setCenterX(((Circle) line).getCenterX() + 5);
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -298,38 +266,13 @@ public class MainWindow extends Application {
      * @param root group that contains all shapes to be displayed
      */
     private void drawGround(Group root) {
-        for (int j = bodyList.length - 1; j >= 0; j--) {
-            float x = Util.toPixelX(bodyList[j].getPosition().x) + camera[1] + 200f;
-            float y = Util.toPixelY(bodyList[j].getPosition().y) + camera[0] - 900f;
-            Fixture fixture = bodyList[j].getFixtureList();
-            if (fixture.getType() == ShapeType.POLYGON) {
-                PolygonShape shape = (PolygonShape)fixture.getShape();
-                Line[][] tile = new Line[1][shape.getVertexCount()];
-                for (int i = 0; i < shape.getVertexCount() - 1; i++) {
-                    Line line = new Line();
-                    float x0 = Util.toPixelX(shape.getVertex(i).x) + x;
-                    float y0 = Util.toPixelY(shape.getVertex(i).y) + y;
-                    float x1 = Util.toPixelX(shape.getVertex(i + 1).x) + x;
-                    float y1 = Util.toPixelY(shape.getVertex(i + 1).y) + y;
-                    line.setStartX(x0);
-                    line.setStartY(y0);
-                    line.setEndX(x1);
-                    line.setEndY(y1);
-                    tile[0][i] = line;
-                    root.getChildren().add(line);
+        for (Shape[][] body : shapeList) {
+            for (Shape[] fixture : body) {
+                if (fixture.length == 4) {
+                    for (Shape line : fixture) {
+                        root.getChildren().add(line);
+                    }
                 }
-                Line line = new Line();
-                float x0 = Util.toPixelX(shape.getVertex(shape.getVertexCount() - 1).x) + x;
-                float y0 = Util.toPixelY(shape.getVertex(shape.getVertexCount() - 1).y) + y;
-                float x1 = Util.toPixelX(shape.getVertex(0).x) + x;
-                float y1 = Util.toPixelY(shape.getVertex(0).y) + y;
-                line.setStartX(x0);
-                line.setStartY(y0);
-                line.setEndX(x1);
-                line.setEndY(y1);
-                tile[0][shape.getVertexCount() - 1] = line;
-                root.getChildren().add(line);
-                shapeList.add(tile);
             }
         }
     }
@@ -341,67 +284,13 @@ public class MainWindow extends Application {
      * @param root group that contains all shapes to be displayed
      */
     private void drawCar(Group root) {
-        for (int k = bodyList.length - 1; k >= 0; k--) {
-            float x = Util.toPixelX(bodyList[k].getPosition().x) + camera[1] + 200f;
-            float y = Util.toPixelY(bodyList[k].getPosition().y) + camera[0] - 900f;
-            Fixture fixture = bodyList[k].getFixtureList();
-            int fixtureCount = 0;
-            do {
-                fixtureCount++;
-                fixture = fixture.getNext();
-            } while (fixture != null);
-            fixture = bodyList[k].getFixtureList();
-            Shape[][] shapeArray = new Shape[fixtureCount][3];
-            boolean isTile = false;
-            for (int j = 0; j < fixtureCount; j++) {
-                if (fixture.getType() == ShapeType.POLYGON) {
-                    PolygonShape shape = (PolygonShape) fixture.getShape();
-                    Line[] triangle = new Line[shape.getVertexCount()];
-                    if (shape.getVertexCount() < 4) {
-                        for (int i = 0; i < shape.getVertexCount() - 1; i++) {
-                            Line line = new Line();
-                            float x0 = Util.toPixelX(shape.getVertex(i).x) + x;
-                            float y0 = Util.toPixelY(shape.getVertex(i).y) + y;
-                            float x1 = Util.toPixelX(shape.getVertex(i + 1).x) + x;
-                            float y1 = Util.toPixelY(shape.getVertex(i + 1).y) + y;
-                            line.setStartX(x0);
-                            line.setStartY(y0);
-                            line.setEndX(x1);
-                            line.setEndY(y1);
-                            triangle[i] = line;
-                            root.getChildren().add(line);
-                        }
-                        Line line = new Line();
-                        float x0 = Util.toPixelX(shape.getVertex(shape.getVertexCount() - 1).x) + x;
-                        float y0 = Util.toPixelY(shape.getVertex(shape.getVertexCount() - 1).y) + y;
-                        float x1 = Util.toPixelX(shape.getVertex(0).x) + x;
-                        float y1 = Util.toPixelY(shape.getVertex(0).y) + y;
-                        line.setStartX(x0);
-                        line.setStartY(y0);
-                        line.setEndX(x1);
-                        line.setEndY(y1);
-                        triangle[shape.getVertexCount() - 1] = line;
+        for (Shape[][] body : shapeList) {
+            for (Shape[] fixture : body) {
+                if (fixture.length < 4) {
+                    for (Shape line : fixture) {
                         root.getChildren().add(line);
-                        shapeArray[j] = triangle;
-                    } else {
-                        isTile = true;
                     }
-                } else if (fixture.getType() == ShapeType.CIRCLE) {
-                    CircleShape shape = (CircleShape) fixture.getShape();
-                    Circle[] circle = new Circle[1];
-                    circle[0] = new Circle();
-                    circle[0].setFill(Color.TRANSPARENT);
-                    circle[0].setStroke(Color.BLACK);
-                    circle[0].setRadius(shape.getRadius() * 50f);
-                    circle[0].setCenterX(x);
-                    circle[0].setCenterY(y + 600f);
-                    root.getChildren().add(circle[0]);
-                    shapeArray[j] = circle;
                 }
-                fixture = fixture.getNext();
-            }
-            if (!isTile) {
-                shapeList.add(shapeArray);
             }
         }
     }
@@ -421,6 +310,40 @@ public class MainWindow extends Application {
     }
 
     /**
+     * createShapeList
+     * converts bodyList to JavaFX shapes
+     * @author Kevin Chik
+     */
+    private void createShapeList() {
+        shapeList = new Shape[bodyList.length][][];
+        for (int i = 0; i < world.getBodyCount(); i++) {
+            int fixtureCount = 0;
+            Fixture fixture = bodyList[i].getFixtureList();
+            do {
+                fixtureCount++;
+                fixture = fixture.getNext();
+            } while (fixture != null);
+            shapeList[i] = new Shape[fixtureCount][];
+            fixture = bodyList[i].getFixtureList();
+            for (int j = 0; j < fixtureCount; j++) {
+                if (fixture.getType() == ShapeType.POLYGON) {
+                    int vertexCount = ((PolygonShape)fixture.getShape()).getVertexCount();
+                    shapeList[i][j] = new Line[vertexCount];
+                    int k = 0;
+                    for (; k < vertexCount - 1; k++) {
+                        shapeList[i][j][k] = new Line();
+                    }
+                    shapeList[i][j][k] = new Line();
+                } else if (fixture.getType() == ShapeType.CIRCLE) {
+                    shapeList[i][j] = new Circle[1];
+                    shapeList[i][j][0] = new Circle();
+                }
+                fixture = fixture.getNext();
+            }
+        }
+    }
+
+    /**
      * centerMap
      * brings camera to start of map
      * @author Kevin Chik
@@ -429,8 +352,8 @@ public class MainWindow extends Application {
         int i = 0;
         for(Shape[][] shape: shapeList) {
             for (Shape[] fixture : shape) {
+                double[] startShape = startShapes.get(i);
                 for (Shape line : fixture) {
-                    double[] startShape = startShapes.get(i);
                     if (line instanceof Line) {
                         ((Line) line).setStartX(startShape[0]);
                         ((Line) line).setEndX(startShape[1]);
@@ -440,8 +363,8 @@ public class MainWindow extends Application {
                         ((Circle) line).setCenterY(startShape[0]);
                         ((Circle) line).setCenterX(startShape[1]);
                     }
-                    i++;
                 }
+                i++;
             }
         }
     }

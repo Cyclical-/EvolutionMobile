@@ -22,16 +22,14 @@ public class CarDefinition {
 	private static final float MAX_ANGLE = (float) (Math.PI * 2);
 	private static final float MIN_MAGNITUDE = 0.1F;
 	private static final float MAX_MAGNITUDE = 1.0F;
-	private static final double MAGNITUDE_MULTIPLIER = 3.0;
 	public static final int NUM_VERTICES = 8;
-	public static final float CHASSIS_DENSITY = 100F;
+	public static final float CHASSIS_DENSITY = Util.nextFloat(100, 300);
 	
 	private ArrayList<Vec2> vertices;
 	
 	//wheel properties
 	private static final float MIN_WHEEL_RADIUS = 0.1F;
 	private static final float MAX_WHEEL_RADIUS = 0.5F;
-	public static final float WHEEL_DENSITY = 60F;
 	public static final int NUM_WHEELS = 3;
 
 	
@@ -88,7 +86,7 @@ public class CarDefinition {
 		for (int w = 0; w < NUM_WHEELS; w++){
 			int vertex = left.remove(r.nextInt(left.size()));
 			float radius = Util.nextFloat(MIN_WHEEL_RADIUS, MAX_WHEEL_RADIUS);
-			float density = WHEEL_DENSITY;
+			float density = Util.nextFloat(50, 100);
 			wheels.add(def.new WheelDefinition(radius, density, vertex));
 		}
 		

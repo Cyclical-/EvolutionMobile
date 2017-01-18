@@ -13,7 +13,7 @@ public class Ground{
 	private float segmentHeight = 0.2f;
 	private float segmentLength = 1.0f;
 
-	private int maxSegments = 300;
+	public static int maxSegments = 300;
 	
 	private ArrayList<Vec2> newCoordinates;
 

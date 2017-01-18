@@ -29,7 +29,7 @@ public class Util {
 	public static float[] rectangularToPolar(Vec2 point){
 		float[] polar = new float[2]; //0 = magnitude, 1 = angle
 		polar[0] = (float) Math.hypot(point.x, point.y);
-		polar[1] = (float) Math.atan(point.x/point.y);
+		polar[1] = (float) Math.atan2(point.y, point.x);
 		return polar;
 	}
 
