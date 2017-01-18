@@ -31,7 +31,7 @@ public class CarDefinition {
 	//wheel properties
 	private static final float MIN_WHEEL_RADIUS = 0.1F;
 	private static final float MAX_WHEEL_RADIUS = 0.5F;
-	private static final float WHEEL_DENSITY = 60F;
+	public static final float WHEEL_DENSITY = 60F;
 	public static final int NUM_WHEELS = 3;
 
 	
@@ -45,7 +45,7 @@ public class CarDefinition {
 	
 	public CarDefinition(ArrayList<Vec2> vertices, ArrayList<WheelDefinition> wheel){
 		this.vertices = vertices;
-		this.wheels = wheels;
+		this.wheels = wheel;
 	}
 	
 	public void addVertex(Vec2 vertex){
