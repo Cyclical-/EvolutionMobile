@@ -158,12 +158,12 @@ public class Car {
 
 		}
 
-		if (position.x > maxPositionx + 0.02f) {
+		if (position.x > maxPositionx + 0.01f) {
 			this.health = MAX_CAR_HEALTH;
 			this.maxPositionx = position.x;
 		} else {
 			if (Math.abs(this.chassis.getLinearVelocity().x) < 0.01f) {
-				this.health -= 2;
+				this.health--;
 			}
 			if (position.x > maxPositionx) {
 				this.maxPositionx = position.x;
@@ -237,7 +237,7 @@ public class Car {
 	private Body createChassis(ArrayList<Vec2> vertices) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
-		bodyDef.position = new Vec2(1.0F, 4.0F);
+		bodyDef.position = new Vec2(1.0F, 2.0F);
 		Body body = world.createBody(bodyDef);
 		TreeMap<Float, Float> points = new TreeMap<Float, Float>();
 		for (int i = 0; i < vertices.size(); i++) {
@@ -281,7 +281,7 @@ public class Car {
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
-		fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1), 0.5));
+		//fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1), 0.5));
 		body.createFixture(fixtureDef);
 		
 	}
