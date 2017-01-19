@@ -32,6 +32,7 @@ import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
 import org.jbox2d.dynamics.World;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -629,6 +630,43 @@ public class MainWindow extends Application {
 
         //Call Crossover method
         //next step
+        return crossover(parents);
+    }
+
+    /**
+     * tournamentSelection
+     * determines parents for next generation, tournament style
+     * @author Anthony Lai
+     * @param currentGen current generation of cars
+     * @param distance fitness scores
+     * @return parents for next generation
+     */
+    private float[][] tournamentSelection (float[][]currentGen, double[] distance){
+        ArrayList<float[]>parents = new ArrayList<>();
+        boolean[] selected = new boolean[populationSize];
+
+        do{
+            int carA = (int)(Math.random()*populationSize);
+            int carB = (int)(Math.random()*populationSize);
+
+            if (carA != carB){
+                if ((!selected[carA])&&(!selected[carB])){
+                   if (distance[carA] > distance[carB]){
+                       parents.add(currentGen[carA]);
+                       selected[carA] = true;
+                       selected[carB] = true;
+                   }else if (distance[carA] < distance[carB]){
+                       parents.add(currentGen[carB]);
+                       selected[carA] = true;
+                       selected[carB] = true;
+                   }else{
+                       selected[carA] = false;
+                       selected[carB] = false;
+                   }
+                }
+            }
+        }while(parents.size() < 10);
+
         return crossover(parents);
     }
 
