@@ -5,11 +5,23 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.jbox2d.collision.shapes.CircleShape;
@@ -22,86 +34,315 @@ import org.jbox2d.dynamics.World;
 
 import java.util.ArrayList;
 
+/**
+ * MainWindow.java
+ * @author Kevin Chik and Anthony Lai
+ * 22/12/2016
+ */
 public class MainWindow extends Application {
 
+    //world
     private static final Vec2 GRAVITY = new Vec2(0.0F, -9.81F);
     private World world = new World(GRAVITY);
     private static final int FPS = 60;
+    private Timeline timeline = new Timeline();
 
+    //stage
     private static final int WIDTH = 900;
     private static final int HEIGHT = 600;
+    private float[] carPos = new float[2];
+    private float[] camera = new float[2];
 
-    private boolean north, south, east, west;
+    //algorithm
+    private int generation = 0;
+    private int carNumber = 0;
+    private float[][] currentGenome = new float[20][22];
+    private float[][] genome = new float[20][22];
+    private double[] distance = new double[20];
+    private static int carsGenerated = 0;
+
+    //body list
     private Body[] bodyList;
-    private ArrayList<Shape> shapeList = new ArrayList<>();
+    private Shape[][][] shapeList;
+
+    //text
+    private Text text;
+    private TextField mutationRateField;
+    private TextField mutationEffectField;
+
+    //presets
+    private double MUTATION_RATE = 0.2;
+    private double MUTATION_EFFECT = 0.5;
+
+    //map maker
+    private boolean customMap = false;
+    private ArrayList<float[]> mapCoordinates = new ArrayList<>();
 
     /**
      * start
-     * @author Kevin
-     * creates stage and runs genetic algorithm
-     * @param primaryStage stage where scene is set
+     * creates stage and opens menu
+     * @author Kevin Chik and Anthony Lai
+     * @param primaryStage stage
      */
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("EvolutionMobile");
+        menu(primaryStage);
+    }
+
+    /**
+     * menu
+     * users can start or preset simulation
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void menu(Stage primaryStage) {
+        //stage settings
         primaryStage.setWidth(WIDTH);
         primaryStage.setHeight(HEIGHT);
-        Group root = new Group();
 
-        Ground ground = new Ground(world);
-        ground.createGround();
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(25, 25, 25, 25));
 
-        bodyList = new Body[world.getBodyCount()];
-        Body body = world.getBodyList();
-        for (int i = 0; i < world.getBodyCount(); i++) {
-            bodyList[i] = body;
-            body = body.getNext();
-        }
+        Text sceneTitle = new Text("EvolutionMobile");
+        sceneTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+        grid.add(sceneTitle, 0, 0, 3, 1);
 
-        draw(root);
+        Button startButton = new Button("Start");
+        Button presetsButton = new Button("Presets");
+        Button mapButton = new Button("Map maker");
+        HBox hBox = new HBox(10);
+        hBox.setAlignment(Pos.BOTTOM_CENTER);
+        hBox.getChildren().add(startButton);
+        hBox.getChildren().add(presetsButton);
+        hBox.getChildren().add(mapButton);
+        grid.add(hBox, 0, 1);
 
-        try {
-            run();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        startButton.setOnAction(event -> startSimulation(primaryStage));
+        presetsButton.setOnAction(event -> presets(primaryStage));
+        mapButton.setOnAction(event -> mapMaker(primaryStage));
 
-        Scene scene = new Scene(root);
-
-        scene.setOnKeyPressed(event -> {
-            switch (event.getCode()) {
-                case UP: north = true; break;
-                case DOWN: south = true; break;
-                case LEFT: west = true; break;
-                case RIGHT: east = true; break;
-            }
-        });
-
-        scene.setOnKeyReleased(event -> {
-            switch (event.getCode()) {
-                case UP: north = false; break;
-                case DOWN: south = false; break;
-                case LEFT: west = false; break;
-                case RIGHT: east = false; break;
-            }
-        });
-
+        Scene scene = new Scene(grid, WIDTH, HEIGHT);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     /**
-     * run
+     * startSimulation
+     * start the program
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void startSimulation(Stage primaryStage) {
+        //root
+        Group root = new Group();
+
+        //ground
+        Ground ground = new Ground(world);
+        if (customMap) {
+            ground.customGround(mapCoordinates);
+        } else {
+            ground.createGround();
+        }
+        createBodyList();
+        createShapeList();
+
+        //text
+        drawText(root);
+
+        Button backButton = new Button("Back");
+        root.getChildren().add(backButton);
+
+        backButton.setOnAction(event -> backSimulation(primaryStage));
+
+        //create scene
+        Scene scene = new Scene(root);
+
+        //set scene
+        primaryStage.setScene(scene);
+        primaryStage.show();
+
+        runGeneticAlgorithm(root);
+    }
+
+    /**
+     * backSimulation
+     * terminates simulation and returns to menu
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void backSimulation(Stage primaryStage) {
+        timeline.stop();
+        customMap = false;
+        mapCoordinates = new ArrayList<>();
+        genome = new float[20][22];
+        generation = 0;
+        carNumber = 0;
+        carsGenerated = 0;
+        world = new World(GRAVITY);
+        menu(primaryStage);
+    }
+
+    /**
+     * presets
+     * preset ranges for algorithm
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void presets(Stage primaryStage) {
+        GridPane grid = new GridPane();
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(25, 25, 25, 25));
+
+        Label username = new Label("Mutation rate:");
+        grid.add(username, 0, 0);
+
+        mutationRateField = new TextField();
+        grid.add(mutationRateField, 1, 0);
+
+        Label password = new Label("Mutation intensity:");
+        grid.add(password, 0, 1);
+
+        mutationEffectField = new TextField();
+        grid.add(mutationEffectField, 1, 1);
+
+        Button backButton = new Button("Back");
+        HBox hBox = new HBox(10);
+        hBox.setAlignment(Pos.BOTTOM_LEFT);
+        hBox.getChildren().add(backButton);
+        grid.add(hBox, 0, 2);
+
+        backButton.setOnAction(event -> backPresets(primaryStage));
+
+        Scene scene = new Scene(grid, WIDTH, HEIGHT);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    /**
+     * backPresets
+     * updates presets and returns to menu
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void backPresets(Stage primaryStage) {
+        if (Util.isDouble(mutationRateField.getText())) {
+            MUTATION_RATE = Double.valueOf(mutationRateField.getText());
+        }
+        if (Util.isDouble(mutationEffectField.getText())) {
+            MUTATION_EFFECT = Double.valueOf(mutationEffectField.getText());
+        }
+        menu(primaryStage);
+    }
+
+    /**
+     * mapMaker
+     * create custom map
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
+    private void mapMaker(Stage primaryStage) {
+        //root
+        Group root = new Group();
+
+        Rectangle canvas = new Rectangle();
+        canvas.setHeight(HEIGHT);
+        canvas.setWidth(WIDTH);
+        canvas.setFill(Color.WHITE);
+        root.getChildren().add(canvas);
+
+        canvas.setOnMouseClicked(event -> {
+            float[] coordinates = new float[3];
+            coordinates[0] = (float) event.getScreenX();
+            coordinates[1] = (float) event.getScreenY();
+            coordinates[2] = (float) Math.sqrt((Math.pow(coordinates[0],2)) + (Math.pow(coordinates[1],2)));
+            mapCoordinates.add(coordinates);
+//            previousCoordinates[0] = coordinates[0];
+//            previousCoordinates[1] = coordinates[1];
+        });
+
+        Button backButton = new Button("Back");
+        root.getChildren().add(backButton);
+
+        backButton.setOnAction(event -> backMapMaker(primaryStage));
+
+        //create scene
+        Scene scene = new Scene(root);
+
+        //set scene
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    /**
+     * backMapMaker
+     * implements custom map and returns to menu
+     * @param primaryStage stage
+     */
+    private void backMapMaker(Stage primaryStage) {
+        customMap = true;
+        menu(primaryStage);
+    }
+
+    /**
+     * runGeneticAlgorithm
+     * genetic algorithm
+     * @author Kevin Chik and Anthony Lai
+     * @param root group that contains all shapes to be displayed
+     */
+    private void runGeneticAlgorithm(Group root) {
+        Car car;
+        if (generation > 0) {
+            car = new Car(genome[carNumber], world);
+        } else {
+            car = new Car(CarDefinition.createRandomCar(), world);
+        }
+        createBodyList();
+        createShapeList();
+        drawCar(root);
+        drawGround(root);
+        text.setText("Generation: " + generation + "\nCar number: " + (carNumber + 1) + "\nTotal cars generated: " + (carsGenerated + 1));
+        //evaluate
+        timeline = new Timeline();
+        try {
+            evaluate(car, root);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * evaluate
      * sets up keyframes for every 1/60s
+     * @author Kevin Chik and Anthony Lai
      * @throws InterruptedException if thread is interrupted
      */
-    private void run() throws InterruptedException {
-        final Timeline timeline = new Timeline();
+    private void evaluate(Car car, Group root) throws InterruptedException {
         timeline.setCycleCount(Timeline.INDEFINITE);
         Duration duration = Duration.seconds(1.0 / FPS);
         EventHandler<ActionEvent> actionEvent = terminate -> {
             world.step(1.0f / FPS, 8, 3);
+            createBodyList();
             update();
+            if (car.checkDeath()) {
+                currentGenome[carNumber] = car.getGenome();
+                distance[carNumber] = car.getFitnessScore();
+                clearScreen(root);
+                car.kill();
+                carsGenerated++;
+                carNumber++;
+                timeline.pause();
+                if (carNumber == 20) {
+                    genome = rouletteSelection(currentGenome, distance);
+                    carNumber = 0;
+                    generation++;
+                }
+                runGeneticAlgorithm(root);
+            }
         };
         KeyFrame keyFrame = new KeyFrame(duration, actionEvent, null, null);
         timeline.getKeyFrames().add(keyFrame);
@@ -109,137 +350,297 @@ public class MainWindow extends Application {
     }
 
     /**
+     * clearScreen
+     * removes shapes from root
+     * @author Kevin Chik
+     * @param root group that contains all shapes to be displayed
+     */
+    private void clearScreen(Group root) {
+        for (Shape[][] body : shapeList) {
+            for (Shape[] fixture : body) {
+                for (Shape line : fixture) {
+                    root.getChildren().remove(line);
+                }
+            }
+        }
+    }
+
+    /**
      * update
-     * moves shapes according to JBox2D world
+     * updates position of car
+     * @author Kevin Chik
      */
     private void update() {
-        if (north) {
-            for(Shape shape: shapeList) {
-                if (shape instanceof Line) {
-                    ((Line)shape).setStartY(((Line)shape).getStartY() + 5);
-                    ((Line)shape).setEndY(((Line)shape).getEndY() + 5);
-                } else if (shape instanceof Circle) {
-                    ((Circle)shape).setCenterY(((Circle)shape).getCenterY() + 5);
+        for (int i = 0; i < shapeList.length; i++) {
+            float x = Util.toPixelX(bodyList[i].getPosition().x) + 200f;
+            float y = Util.toPixelY(bodyList[i].getPosition().y) - 800;
+            float angle = -(bodyList[i].getTransform().q.getAngle());
+            Fixture fixture = bodyList[i].getFixtureList();
+            int fixtureCount = 0;
+            do {
+                fixtureCount++;
+                fixture = fixture.getNext();
+            } while (fixture != null);
+            if (fixtureCount > 1) {
+                camera[0] = carPos[0] - x;
+                camera[1] = carPos[1] - y;
+            }
+            x += camera[0];
+            y += camera[1];
+            fixture = bodyList[i].getFixtureList();
+            for (int j = 0; j < shapeList[i].length; j++) {
+                if (fixture.getType() == ShapeType.POLYGON) {
+                    PolygonShape shape = (PolygonShape)fixture.getShape();
+                    int k = 0;
+                    for (; k < shapeList[i][j].length - 1; k++) {
+                        Line line = ((Line)shapeList[i][j][k]);
+                        float x0 = shape.getVertex(k).x;
+                        float y0 = shape.getVertex(k).y;
+                        float ax0 = (float) (Math.sin(angle) * y0 + Math.cos(angle) * x0);
+                        float ay0 = (float) (Math.cos(angle) * y0 - Math.sin(angle) * x0);
+                        float x1 = shape.getVertex(k + 1).x;
+                        float y1 = shape.getVertex(k + 1).y;
+                        float ax1 = (float) (Math.sin(angle) * y1 + Math.cos(angle) * x1);
+                        float ay1 = (float) (Math.cos(angle) * y1 - Math.sin(angle) * x1);
+                        if (shapeList[i][j].length > 3) {
+                            line.setStroke(Color.GRAY);
+                        } else {
+                            line.setStroke(Color.valueOf("#2b2b2b"));
+                        }
+                        line.setStartX(Util.toPixelX(ax0) + x);
+                        line.setStartY(Util.toPixelY(ay0) + y);
+                        line.setEndX(Util.toPixelX(ax1) + x);
+                        line.setEndY(Util.toPixelY(ay1) + y);
+                        shapeList[i][j][k] = line;
+                    }
+                    Line line = ((Line)shapeList[i][j][k]);
+                    float x0 = shape.getVertex(0).x;
+                    float y0 = shape.getVertex(0).y;
+                    float ax0 = (float) (Math.sin(angle) * y0 + Math.cos(angle) * x0);
+                    float ay0 = (float) (Math.cos(angle) * y0 - Math.sin(angle) * x0);
+                    float x1 = shape.getVertex(k).x;
+                    float y1 = shape.getVertex(k).y;
+                    float ax1 = (float) (Math.sin(angle) * y1 + Math.cos(angle) * x1);
+                    float ay1 = (float) (Math.cos(angle) * y1 - Math.sin(angle) * x1);
+                    if (shapeList[i][j].length > 3) {
+                        line.setStroke(Color.GRAY);
+                    } else {
+                        line.setStroke(Color.valueOf("#2b2b2b"));
+                    }
+                    line.setStartX(Util.toPixelX(ax0) + x);
+                    line.setStartY(Util.toPixelY(ay0) + y);
+                    line.setEndX(Util.toPixelX(ax1) + x);
+                    line.setEndY(Util.toPixelY(ay1) + y);
+                    shapeList[i][j][k] = line;
+                } else if (fixture.getType() == ShapeType.CIRCLE) {
+                    CircleShape shape = (CircleShape)fixture.getShape();
+                    Circle circle = ((Circle)shapeList[i][j][0]);
+                    circle.setFill(Color.rgb(255, 192, 203, 0.5));
+                    circle.setStroke(Color.DEEPPINK);
+//                    circle.setFill(Color.rgb(86, 191, 226, 0.5));
+//                    circle.setStroke(Color.DEEPSKYBLUE);
+                    circle.setRadius(shape.getRadius() * 50f);
+                    circle.setCenterX(x);
+                    circle.setCenterY(y + 600f);
+                    shapeList[i][j][0] = circle;
                 }
+                fixture = fixture.getNext();
             }
         }
-        if (south) {
-            for(Shape shape: shapeList) {
-                if (shape instanceof Line) {
-                    ((Line)shape).setStartY(((Line)shape).getStartY() - 5);
-                    ((Line)shape).setEndY(((Line)shape).getEndY() - 5);
-                } else if (shape instanceof Circle) {
-                    ((Circle)shape).setCenterY(((Circle)shape).getCenterY() - 5);
-                }
-            }
-        }
-        if (east) {
-            for(Shape shape: shapeList) {
-                if (shape instanceof Line) {
-                    ((Line)shape).setStartX(((Line)shape).getStartX() - 5);
-                    ((Line)shape).setEndX(((Line)shape).getEndX() - 5);
-                } else if (shape instanceof Circle) {
-                    ((Circle)shape).setCenterX(((Circle)shape).getCenterX() - 5);
-                }
-            }
-        }
-        if (west) {
-            for(Shape shape: shapeList) {
-                if (shape instanceof Line) {
-                    ((Line)shape).setStartX(((Line)shape).getStartX() + 5);
-                    ((Line)shape).setEndX(((Line)shape).getEndX() + 5);
-                } else if (shape instanceof Circle) {
-                    ((Circle)shape).setCenterX(((Circle)shape).getCenterX() + 5);
-                }
-            }
-        }
+
     }
 
     /**
      * draw
-     * draws shapes on scene
-     * @param root group that contains shapes
+     * draws ground on scene
+     * @author Kevin Chik
+     * @param root group that contains all shapes to be displayed
      */
-    private void draw(Group root) {
-        for (Body body: bodyList) {
-            float x = toPixelX(body.getPosition().x);
-            float y = toPixelY(body.getPosition().y);
-            Fixture fixture = body.getFixtureList();
-            if (fixture.getType() == ShapeType.POLYGON) {
-                PolygonShape shape = (PolygonShape)fixture.getShape();
-                for (int i = 0; i < shape.getVertexCount() - 1; i++) {
-                    Line line = new Line();
-                    float x0 = toPixelX(shape.getVertex(i).x) + x + 200f;
-                    float y0 = toPixelY(shape.getVertex(i).y) + y - 900f;
-                    float x1 = toPixelX(shape.getVertex(i + 1).x) + x + 200f;
-                    float y1 = toPixelY(shape.getVertex(i + 1).y) + y - 900f;
-                    line.setStartX(x0);
-                    line.setStartY(y0);
-                    line.setEndX(x1);
-                    line.setEndY(y1);
-                    shapeList.add(line);
-                    root.getChildren().add(line);
+    private void drawGround(Group root) {
+        for (Shape[][] body : shapeList) {
+            for (Shape[] fixture : body) {
+                if (fixture.length == 4) {
+                    for (Shape line : fixture) {
+                        root.getChildren().add(line);
+                    }
                 }
-                Line line = new Line();
-                float x0 = toPixelX(shape.getVertex(shape.getVertexCount() - 1).x) + x + 200f;
-                float y0 = toPixelY(shape.getVertex(shape.getVertexCount() - 1).y) + y - 900f;
-                float x1 = toPixelX(shape.getVertex(0).x) + x + 200f;
-                float y1 = toPixelY(shape.getVertex(0).y) + y - 900f;
-                line.setStartX(x0);
-                line.setStartY(y0);
-                line.setEndX(x1);
-                line.setEndY(y1);
-                shapeList.add(line);
-                root.getChildren().add(line);
-            } else if (fixture.getType() == ShapeType.CIRCLE) {
-                Circle circle = new Circle();
-                CircleShape shape = (CircleShape)fixture.getShape();
-                circle.setRadius(shape.getRadius());
-                circle.setCenterX(x);
-                circle.setCenterY(y);
-                shapeList.add(circle);
-                root.getChildren().add(circle);
             }
         }
     }
 
     /**
-     * toPixelX
-     * converts meters to pixels for x-values
-     * @param x x-value in meters
-     * @return x-value in pixels
+     * drawCar
+     * draws car on scene
+     * @author Kevin Chik
+     * @param root group that contains all shapes to be displayed
      */
-    private static float toPixelX(float x) {
-        return x * 50f;
+    private void drawCar(Group root) {
+        for (Body body : bodyList) {
+            int fixtureCount = 0;
+            Fixture fixture = body.getFixtureList();
+            do {
+                fixtureCount++;
+                fixture = fixture.getNext();
+            } while (fixture != null);
+            if (fixtureCount > 1) {
+                carPos[0] = Util.toPixelX(body.getPosition().x) + 200f;
+                carPos[1] = Util.toPixelY(body.getPosition().y) - 800f;
+            }
+        }
+        for (Shape[][] body : shapeList) {
+            for (Shape[] fixture : body) {
+                if (fixture.length < 4) {
+                    for (Shape line : fixture) {
+                        root.getChildren().add(line);
+                    }
+                }
+            }
+        }
     }
 
     /**
-     * toPixelY
-     * converts meters to pixels for y-values
-     * @param y y-value in meters
-     * @return y-value in pixels
+     * createBodyList
+     * puts all JBox2d bodies in an array
+     * @author Kevin Chik
      */
-    private static float toPixelY(float y) {
-        return HEIGHT - y * 50f;
+    private void createBodyList() {
+        bodyList = new Body[world.getBodyCount()];
+        Body body = world.getBodyList();
+        for (int i = 0; i < world.getBodyCount(); i++) {
+            bodyList[i] = body;
+            body = body.getNext();
+        }
     }
 
-    public void rouletteSelection(ArrayList<Car> currentGen){
-
+    /**
+     * createShapeList
+     * converts bodyList to JavaFX shapes
+     * @author Kevin Chik
+     */
+    private void createShapeList() {
+        shapeList = new Shape[bodyList.length][][];
+        for (int i = 0; i < world.getBodyCount(); i++) {
+            int fixtureCount = 0;
+            Fixture fixture = bodyList[i].getFixtureList();
+            do {
+                fixtureCount++;
+                fixture = fixture.getNext();
+            } while (fixture != null);
+            shapeList[i] = new Shape[fixtureCount][];
+            fixture = bodyList[i].getFixtureList();
+            for (int j = 0; j < fixtureCount; j++) {
+                if (fixture.getType() == ShapeType.POLYGON) {
+                    int vertexCount = ((PolygonShape)fixture.getShape()).getVertexCount();
+                    shapeList[i][j] = new Line[vertexCount];
+                    int k = 0;
+                    for (; k < vertexCount - 1; k++) {
+                        shapeList[i][j][k] = new Line();
+                    }
+                    shapeList[i][j][k] = new Line();
+                } else if (fixture.getType() == ShapeType.CIRCLE) {
+                    shapeList[i][j] = new Circle[1];
+                    shapeList[i][j][0] = new Circle();
+                }
+                fixture = fixture.getNext();
+            }
+        }
     }
 
-    public void crossover (ArrayList<Car> parents){
+    /**
+     * drawText
+     * shows info on algorithm
+     * @author Kevin Chik
+     * @param root group that contains all shapes to be displayed
+     */
+    private void drawText(Group root) {
+        text = new Text();
+        text.setFont(new Font(12));
+        text.setX(5);
+        text.setY(520);
+        root.getChildren().add(text);
+    }
+
+    /**
+     * rouletteSelection
+     * determines parents for next generation
+     * @author Anthony Lai
+     * @param currentGen current generation of cars
+     * @param distance fitness scores
+     * @return parents for next generation
+     */
+    private float[][] rouletteSelection(float[][] currentGen, double[] distance){
+
+        //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
+        double [][] fitnessScores = new double[20][2];
+        for (int i = 0; i < fitnessScores.length; i++) {
+            fitnessScores[i][0] = distance[i];
+        }
+
+        //Find sum of all fitness scores
+        double sumOfFitnessScores = 0;
+        for (double[] fitnessScore : fitnessScores) {
+            sumOfFitnessScores = fitnessScore[0] + sumOfFitnessScores;
+        }
+
+        //Find each car's probability of selection
+        for (int i = 0; i < fitnessScores.length; i++){
+            fitnessScores[i][1] = (fitnessScores[i][0] / sumOfFitnessScores) * 100;
+        }
+
+        double[] rouletteWheel = new double[20];
+        rouletteWheel[0] = fitnessScores[0][1];
+        for (int i = 1; i < rouletteWheel.length; i++){
+            rouletteWheel[i] = fitnessScores[i][1] + rouletteWheel[i-1];
+        }
+
+        //selecting parents
+        double selectionNum;
+        ArrayList<float[]> parents = new ArrayList<>();
+        boolean[] selected = new boolean[20];
+        do{
+            selectionNum = (Math.random()*101);
+
+            if ((selectionNum >= 0) && (selectionNum <= rouletteWheel[0])){
+                if (!selected[0]) {
+                    parents.add(currentGen[0]);
+                    selected[0] = true;
+                }
+            }
+            for (int j = 1; j < rouletteWheel.length; j++){
+                if ((selectionNum > rouletteWheel[j-1]) && (selectionNum <= rouletteWheel[j])){
+                    if (!selected[j]) {
+                        parents.add(currentGen[j]);
+                        selected[j] = true;
+                    }
+                }
+            }
+        }while (parents.size() < 10);
+
+        //Call Crossover method
+        //next step
+        return crossover(parents);
+    }
+
+    /**
+     * crossover
+     * performs crossover to create child generation
+     * @author Kevin Chik
+     * @param parents parent generation
+     * @return child generation
+     */
+    private float [][] crossover (ArrayList<float[]> parents){
         float[][] children = new float[20][22];
         int i = 0;
         for (int two = 0; two < 2; two++) {
             for (int j = 0; j < parents.size(); j++) {
-                Car temp = parents.get(j);
+                float[] temp = parents.get(j);
                 int random = (int) (Math.random() * parents.size());
                 parents.set(j, parents.get(random));
                 parents.set(random, temp);
             }
             for (int j = 0; j < parents.size(); j += 2) {
-                Car parent0 = parents.get(j);
-                Car parent1 = parents.get(j + 1);
+                float[] parent0 = parents.get(j);
+                float[] parent1 = parents.get(j + 1);
                 int point0 = ((int) (Math.random() * 11) + 1) * 2 - 1;
                 int point1;
                 do {
@@ -253,28 +654,34 @@ public class MainWindow extends Application {
                 float[] genome0 = new float[22];
                 float[] genome1 = new float[22];
                 for (int k = 0; k < point0 - 1; k++) {
-                    genome0[k] = parent0.getGenome()[k];
-                    genome1[k] = parent1.getGenome()[k];
+                    genome0[k] = parent0[k];
+                    genome1[k] = parent1[k];
                 }
                 for (int k = point0 - 1; k < point1 - 1; k++) {
-                    genome0[k] = parent1.getGenome()[k];
-                    genome1[k] = parent0.getGenome()[k];
+                    genome0[k] = parent1[k];
+                    genome1[k] = parent0[k];
                 }
                 for (int k = point1 - 1; k < genome0.length; k++) {
-                    genome0[k] = parent0.getGenome()[k];
-                    genome1[k] = parent1.getGenome()[k];
+                    genome0[k] = parent0[k];
+                    genome1[k] = parent1[k];
                 }
                 children[i] = genome0;
                 children[i + 1] = genome1;
                 i += 2;
             }
         }
-        mutation(children);
+
+        return mutation(children);
     }
 
-    public void mutation(float[][] children){
-        final double MUTATION_RATE = 0.2;
-        final double MUTATION_EFFECT = 0.2;
+    /**
+     * mutation
+     * mutates children
+     * @author Kevin Chik
+     * @param children child generation
+     * @return mutated child generation
+     */
+    private float[][] mutation(float[][] children){
         for (int i = 0; i < children.length; i++) {
             for (int j = 0; j < children[i].length; j++) {
                 double random = Math.random();
@@ -284,10 +691,7 @@ public class MainWindow extends Application {
                 }
             }
         }
-    }
-
-    public void createChild(){
-
+        return children;
     }
 
     public static void main(String[] args) {
