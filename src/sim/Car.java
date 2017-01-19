@@ -152,8 +152,8 @@ public class Car {
 		if (position.x < 0.0F){
 			return true;
 		}
-		if (position.x > 300){
-			this.maxPositionx = 300;
+		if (position.x > Ground.maxSegments){
+			this.maxPositionx = Ground.maxSegments;
 			return true;
 
 		}
