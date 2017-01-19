@@ -198,7 +198,7 @@ public class Car {
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
-		bodyDef.position = new Vec2(0F, 0F);
+		bodyDef.position = new Vec2(1.0F, 2.0F);
 		Body body = world.createBody(bodyDef);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = new CircleShape();
