@@ -157,6 +157,10 @@ public class Car {
 			return true;
 
 		}
+		
+		if (Math.abs(this.chassis.getLinearVelocity().y) > 0.01f){
+			this.health = MAX_CAR_HEALTH;
+		}
 
 		if (position.x > maxPositionx + 0.01f) {
 			this.health = MAX_CAR_HEALTH;
