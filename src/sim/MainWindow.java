@@ -69,10 +69,12 @@ public class MainWindow extends Application {
     private Text text;
     private TextField mutationRateField;
     private TextField mutationEffectField;
+    private TextField populationSizeTextField;
 
     //presets
     private double MUTATION_RATE = 0.2;
     private double MUTATION_EFFECT = 0.5;
+    private int populationSize = 20;
 
     //map maker
     private boolean customMap = false;
@@ -198,17 +200,23 @@ public class MainWindow extends Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        Label username = new Label("Mutation rate:");
-        grid.add(username, 0, 0);
+        Label mutationRateLabel = new Label("Mutation rate:");
+        grid.add(mutationRateLabel, 0, 0);
 
         mutationRateField = new TextField();
         grid.add(mutationRateField, 1, 0);
 
-        Label password = new Label("Mutation intensity:");
-        grid.add(password, 0, 1);
+        Label mutationIntenseLabel = new Label("Mutation intensity:");
+        grid.add(mutationIntenseLabel, 0, 1);
 
         mutationEffectField = new TextField();
         grid.add(mutationEffectField, 1, 1);
+
+        Label populationSizeLabel = new Label("Mutation intensity:");
+        grid.add(populationSizeLabel, 0, 2);
+
+        populationSizeTextField = new TextField();
+        grid.add(populationSizeTextField, 1, 2);
 
         Button backButton = new Button("Back");
         HBox hBox = new HBox(10);
@@ -235,6 +243,9 @@ public class MainWindow extends Application {
         }
         if (Util.isDouble(mutationEffectField.getText())) {
             MUTATION_EFFECT = Double.valueOf(mutationEffectField.getText());
+        }
+        if (Util.isInt(populationSizeTextField.getText())){
+            populationSize = Integer.valueOf(populationSizeTextField.getText());
         }
         menu(primaryStage);
     }
@@ -571,7 +582,7 @@ public class MainWindow extends Application {
     private float[][] rouletteSelection(float[][] currentGen, double[] distance){
 
         //fitnessScores - index 0 is the car's fitness score - index 1 is the car's probability of selection
-        double [][] fitnessScores = new double[20][2];
+        double [][] fitnessScores = new double[populationSize][2];
         for (int i = 0; i < fitnessScores.length; i++) {
             fitnessScores[i][0] = distance[i];
         }
@@ -587,7 +598,7 @@ public class MainWindow extends Application {
             fitnessScores[i][1] = (fitnessScores[i][0] / sumOfFitnessScores) * 100;
         }
 
-        double[] rouletteWheel = new double[20];
+        double[] rouletteWheel = new double[populationSize];
         rouletteWheel[0] = fitnessScores[0][1];
         for (int i = 1; i < rouletteWheel.length; i++){
             rouletteWheel[i] = fitnessScores[i][1] + rouletteWheel[i-1];
@@ -596,7 +607,7 @@ public class MainWindow extends Application {
         //selecting parents
         double selectionNum;
         ArrayList<float[]> parents = new ArrayList<>();
-        boolean[] selected = new boolean[20];
+        boolean[] selected = new boolean[populationSize];
         do{
             selectionNum = (Math.random()*101);
 
@@ -629,7 +640,7 @@ public class MainWindow extends Application {
      * @return child generation
      */
     private float [][] crossover (ArrayList<float[]> parents){
-        float[][] children = new float[20][22];
+        float[][] children = new float[populationSize][22];
         int i = 0;
         for (int two = 0; two < 2; two++) {
             for (int j = 0; j < parents.size(); j++) {
