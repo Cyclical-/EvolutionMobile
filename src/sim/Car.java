@@ -278,8 +278,6 @@ public class Car {
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
-		// fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1),
-		// 0.5));
 		body.createFixture(fixtureDef);
 	}
 
