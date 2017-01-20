@@ -1,11 +1,6 @@
 package sim;
 
-import javafx.scene.paint.Color;
-import java.awt.List;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.jbox2d.collision.shapes.CircleShape;
@@ -27,7 +22,6 @@ import sim.CarDefinition.WheelDefinition;
  *
  */
 public class Car {
-
 
 	private static final int MAX_CAR_HEALTH = Simulation.BOX2D_FPS;
 
@@ -69,7 +63,7 @@ public class Car {
 				Body wheel = createWheel(this.definition.getWheels().get(i));
 				this.wheels.add(wheel);
 				carMass += wheel.getMass();
-				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius()))));
+				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), ((carMass) * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius()))));
 			}
 		}
 		this.alive = true;
@@ -107,8 +101,8 @@ public class Car {
 		for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
 			def.addVertex(Util.polarToRectangular(this.genome[i * 2], this.genome[(i * 2) + 1]));
 		}
-		for (int w = 0; w < CarDefinition.NUM_WHEELS; w++){
-			def.addWheel(def.new WheelDefinition(this.genome[(w*2) + (CarDefinition.NUM_VERTICES * 2)], Util.nextFloat(50, 100), (int)this.genome[(w*2) + 1 + (CarDefinition.NUM_VERTICES * 2)]));
+		for (int w = 0; w < CarDefinition.NUM_WHEELS; w++) {
+			def.addWheel(def.new WheelDefinition(this.genome[(w * 2) + (CarDefinition.NUM_VERTICES * 2)], Util.nextFloat(25, 75), (int) this.genome[(w * 2) + 1 + (CarDefinition.NUM_VERTICES * 2)]));
 		}
 		return def;
 	}
@@ -123,7 +117,7 @@ public class Car {
 	public void writeGenome() {
 		// write chassis
 		ArrayList<Vec2> vertices = this.definition.getVertices();
-		vertices.remove(0);
+		// vertices.remove(0);
 		for (int i = 0; i < vertices.size(); i++) {
 			float[] polar = Util.rectangularToPolar(vertices.get(i));
 			this.genome[i * 2] = polar[0];
@@ -148,17 +142,17 @@ public class Car {
 		if (position.y < minPositiony) {
 			this.minPositiony = position.y;
 		}
-		
-		if (position.x < 0.0F){
+
+		if (position.x < 0.0F) {
 			return true;
 		}
-		if (position.x > Ground.maxSegments){
+		if (position.x > Ground.maxSegments) {
 			this.maxPositionx = Ground.maxSegments;
 			return true;
 
 		}
-		
-		if (Math.abs(this.chassis.getLinearVelocity().y) > 0.01f){
+
+		if (Math.abs(this.chassis.getLinearVelocity().y) > 0.01f) {
 			this.health = MAX_CAR_HEALTH;
 		}
 
@@ -182,7 +176,7 @@ public class Car {
 	}
 
 	public void kill() {
-		for (Joint j : this.joints){
+		for (Joint j : this.joints) {
 			this.world.destroyJoint(j);
 		}
 		for (Body wheel : this.wheels) {
@@ -215,7 +209,7 @@ public class Car {
 		body.createFixture(fixtureDef);
 
 		return body;
-		
+
 	}
 
 	private Joint createJointForWheel(Body wheel, CarDefinition.WheelDefinition wheelDef, float torqueWheel) {
@@ -250,19 +244,18 @@ public class Car {
 		}
 		ArrayList<Vec2> sorted = new ArrayList<Vec2>();
 		ArrayList<Float> keys = new ArrayList<Float>();
-		for (Float f : points.keySet()){
+		for (Float f : points.keySet()) {
 			keys.add(f);
 		}
 		for (int i = 0; i < points.size(); i++) {
 			sorted.add(Util.polarToRectangular(points.get(keys.get(i)), keys.get(i)));
 		}
 		// create chassis parts
-		for (int part = 1; part  < sorted.size(); part++) {
+		for (int part = 1; part < sorted.size(); part++) {
 			createChassisPart(body, sorted.get(part - 1), sorted.get(part));
 		}
 		return body;
 	}
-
 
 	/**
 	 * createChassisPart
@@ -276,7 +269,7 @@ public class Car {
 		Vec2[] listOfVertices = new Vec2[3];
 		listOfVertices[0] = one;
 		listOfVertices[1] = two;
-		listOfVertices[2] = new Vec2(0,0);
+		listOfVertices[2] = new Vec2(0, 0);
 		PolygonShape s = new PolygonShape();
 		s.set(listOfVertices, 3);
 		FixtureDef fixtureDef = new FixtureDef();
@@ -285,9 +278,9 @@ public class Car {
 		fixtureDef.friction = 10F;
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
-		//fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1), 0.5));
+		// fixtureDef.setUserData(new Color(one.length(), two.length(), Util.nextDouble(0, 1),
+		// 0.5));
 		body.createFixture(fixtureDef);
-		
 	}
 
 	/**
