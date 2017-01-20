@@ -52,4 +52,14 @@ public class Util {
         }
     }
 
+    public static boolean isInt(String input) {
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            Integer.parseInt(input);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
