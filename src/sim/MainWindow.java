@@ -68,10 +68,12 @@ public class MainWindow extends Application {
     private Shape[][][] shapeList;
 
     //text
-    private Text text;
+    private Text carInfoText;
+    private Text carFitnessScoreText;
     private TextField mutationRateField;
     private TextField mutationEffectField;
     private TextField populationSizeTextField;
+    private TextField numTilesPresetTextField;
 
     //presets
     private double MUTATION_RATE = 0.2;
@@ -206,26 +208,32 @@ public class MainWindow extends Application {
         Label mutationRateLabel = new Label("Mutation rate:");
         grid.add(mutationRateLabel, 0, 0);
 
-        mutationRateField = new TextField();
+        mutationRateField = new TextField("0.2");
         grid.add(mutationRateField, 1, 0);
 
         Label mutationIntenseLabel = new Label("Mutation intensity:");
         grid.add(mutationIntenseLabel, 0, 1);
 
-        mutationEffectField = new TextField();
+        mutationEffectField = new TextField("0.5");
         grid.add(mutationEffectField, 1, 1);
 
         Label populationSizeLabel = new Label("Population Size");
         grid.add(populationSizeLabel, 0, 2);
 
-        populationSizeTextField = new TextField();
+        populationSizeTextField = new TextField("20");
         grid.add(populationSizeTextField, 1, 2);
+
+        Label numTilesPresetLabel = new Label("Number of Tiles in Map");
+        grid.add(numTilesPresetLabel, 0, 3);
+
+        numTilesPresetTextField = new TextField("300");
+        grid.add(numTilesPresetTextField, 1, 3);
 
         Button backButton = new Button("Back");
         HBox hBox = new HBox(10);
         hBox.setAlignment(Pos.BOTTOM_LEFT);
         hBox.getChildren().add(backButton);
-        grid.add(hBox, 0, 3);
+        grid.add(hBox, 0, 4);
 
         backButton.setOnAction(event -> backPresets(primaryStage));
 
@@ -249,6 +257,9 @@ public class MainWindow extends Application {
         }
         if (Util.isInt(populationSizeTextField.getText())){
             populationSize = Integer.valueOf(populationSizeTextField.getText());
+        }
+        if (Util.isInt(numTilesPresetTextField.getText())){
+            Ground.maxSegments = Integer.valueOf(numTilesPresetTextField.getText());
         }
         menu(primaryStage);
     }
@@ -349,7 +360,8 @@ public class MainWindow extends Application {
         createShapeList();
         drawCar(root);
         drawGround(root);
-        text.setText("Generation: " + generation + "\nCar number: " + (carNumber + 1) + "\nTotal cars generated: " + (carsGenerated + 1));
+        carInfoText.setText("Generation: " + generation + "\nCar number: " + (carNumber + 1) + "\nTotal cars generated: " + (carsGenerated + 1));
+
         //evaluate
         timeline = new Timeline();
         try {
@@ -371,6 +383,8 @@ public class MainWindow extends Application {
         EventHandler<ActionEvent> actionEvent = terminate -> {
             world.step(1.0f / FPS, 8, 3);
             createBodyList();
+            carFitnessScoreText.setText(Double.toString(car.getFitnessScore()));
+            drawFitnessScoreText(root);
             update();
             if (car.checkDeath()) {
                 currentGenome[carNumber] = car.getGenome();
@@ -597,11 +611,25 @@ public class MainWindow extends Application {
      * @param root group that contains all shapes to be displayed
      */
     private void drawText(Group root) {
-        text = new Text();
-        text.setFont(new Font(12));
-        text.setX(5);
-        text.setY(520);
-        root.getChildren().add(text);
+        carInfoText = new Text();
+        carInfoText.setFont(new Font(12));
+        carInfoText.setX(5);
+        carInfoText.setY(520);
+        root.getChildren().add(carInfoText);
+    }
+
+    /**
+     * drawText
+     * shows info on algorithm
+     * @author Anthony Lai
+     * @param root group that contains all shapes to be displayed
+     */
+    private void drawFitnessScoreText(Group root) {
+        carFitnessScoreText = new Text();
+        carFitnessScoreText.setFont(new Font(12));
+        carFitnessScoreText.setX(5);
+        carFitnessScoreText.setY(600);
+        root.getChildren().add(carFitnessScoreText);
     }
 
     /**
