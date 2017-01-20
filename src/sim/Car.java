@@ -328,7 +328,7 @@ public class Car {
 	 * @author Anthony Lai
 	 * @return
 	 */
-	public double getFitnessScore() {
+	public float getFitnessScore() {
 		return this.maxPositionx;
 	}
 

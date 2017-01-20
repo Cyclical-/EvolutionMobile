@@ -28,6 +28,7 @@ import javafx.util.Duration;
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.collision.shapes.ShapeType;
+import org.jbox2d.common.MathUtils;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
@@ -158,6 +159,10 @@ public class MainWindow extends Application {
 
         //text
         drawText(root);
+        carFitnessScoreText = new Text();
+
+        drawFitnessScoreText(root);
+
 
         Button backButton = new Button("Back");
         root.getChildren().add(backButton);
@@ -383,8 +388,7 @@ public class MainWindow extends Application {
         EventHandler<ActionEvent> actionEvent = terminate -> {
             world.step(1.0f / FPS, 8, 3);
             createBodyList();
-            carFitnessScoreText.setText(Double.toString(car.getFitnessScore()));
-            drawFitnessScoreText(root);
+            carFitnessScoreText.setText("Fitness Score: " + Util.round2(car.getFitnessScore(), 2) + "");
             update();
             if (car.checkDeath()) {
                 currentGenome[carNumber] = car.getGenome();
@@ -625,10 +629,9 @@ public class MainWindow extends Application {
      * @param root group that contains all shapes to be displayed
      */
     private void drawFitnessScoreText(Group root) {
-        carFitnessScoreText = new Text();
         carFitnessScoreText.setFont(new Font(12));
         carFitnessScoreText.setX(5);
-        carFitnessScoreText.setY(600);
+        carFitnessScoreText.setY(506);
         root.getChildren().add(carFitnessScoreText);
     }
 
