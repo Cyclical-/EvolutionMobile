@@ -22,6 +22,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.jbox2d.collision.shapes.CircleShape;
@@ -80,6 +81,7 @@ public class MainWindow extends Application {
     //map maker
     private boolean customMap = false;
     private ArrayList<float[]> mapCoordinates = new ArrayList<>();
+
 
     /**
      * start
@@ -213,7 +215,7 @@ public class MainWindow extends Application {
         mutationEffectField = new TextField();
         grid.add(mutationEffectField, 1, 1);
 
-        Label populationSizeLabel = new Label("Mutation intensity:");
+        Label populationSizeLabel = new Label("Population Size");
         grid.add(populationSizeLabel, 0, 2);
 
         populationSizeTextField = new TextField();
@@ -223,7 +225,7 @@ public class MainWindow extends Application {
         HBox hBox = new HBox(10);
         hBox.setAlignment(Pos.BOTTOM_LEFT);
         hBox.getChildren().add(backButton);
-        grid.add(hBox, 0, 2);
+        grid.add(hBox, 0, 3);
 
         backButton.setOnAction(event -> backPresets(primaryStage));
 
@@ -257,6 +259,12 @@ public class MainWindow extends Application {
      * @author Kevin Chik
      * @param primaryStage stage
      */
+    /**
+     * mapMaker
+     * create custom map
+     * @author Kevin Chik
+     * @param primaryStage stage
+     */
     private void mapMaker(Stage primaryStage) {
         //root
         Group root = new Group();
@@ -267,14 +275,38 @@ public class MainWindow extends Application {
         canvas.setFill(Color.WHITE);
         root.getChildren().add(canvas);
 
+        ArrayList<Rectangle> shapes = new ArrayList<>();
+        ArrayList<float[]> angles = new ArrayList<>();
+        double[] position = new double[2];
+
         canvas.setOnMouseClicked(event -> {
-            float[] coordinates = new float[3];
-            coordinates[0] = (float) event.getScreenX();
-            coordinates[1] = (float) event.getScreenY();
-            coordinates[2] = (float) Math.sqrt((Math.pow(coordinates[0],2)) + (Math.pow(coordinates[1],2)));
-            mapCoordinates.add(coordinates);
-//            previousCoordinates[0] = coordinates[0];
-//            previousCoordinates[1] = coordinates[1];
+            if (event.getSceneX() >= 300) {
+                float x = (float) event.getSceneX() - 300;
+                float y = (float) event.getSceneY() - 300;
+                float[] angle = {(float) Math.atan(-y / x)};
+                mapCoordinates.add(angle);
+                for (int i = 0; i < shapes.size(); i++) {
+                    shapes.get(i).getTransforms().remove(0);
+                    shapes.get(i).setX(shapes.get(i).getX() - position[0]);
+                    shapes.get(i).setY(shapes.get(i).getY() - position[1]);
+                    Rotate revert = new Rotate((double) -angles.get(i)[0] / Math.PI * 180, shapes.get(i).getX(), shapes.get(i).getY());
+                    shapes.get(i).getTransforms().add(revert);
+                }
+                position[0] = 50 * Math.cos(Math.atan(y / x));
+                position[1] = 50 * Math.sin(Math.atan(y / x));
+                Rectangle rectangle = new Rectangle();
+                rectangle.setHeight(10);
+                rectangle.setWidth(50);
+                rectangle.setX(300);
+                rectangle.setY(300);
+                rectangle.setFill(Color.TRANSPARENT);
+                rectangle.setStroke(Color.GRAY);
+                Rotate rotation = new Rotate(Math.atan(y / x) / Math.PI * 180, rectangle.getX(), rectangle.getY());
+                rectangle.getTransforms().add(rotation);
+                shapes.add(rectangle);
+                angles.add(angle);
+                root.getChildren().add(rectangle);
+            }
         });
 
         Button backButton = new Button("Back");

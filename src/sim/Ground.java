@@ -86,8 +86,8 @@ public class Ground{
 
     public void customGround(ArrayList<float[]> data) {
         Vec2 startPos = new Vec2(0, -0.5f);
-        for (float[] coordinates : data) {
-            Body tile = newTile(startPos, coordinates[2]);
+        for (float[] angle : data) {
+            Body tile = newTile(startPos, (float) (angle[0]));
             startPos = tile.getWorldPoint(this.newCoordinates.get(3));
         }
     }
