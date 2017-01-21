@@ -11,6 +11,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -56,19 +57,24 @@ public class MainWindow extends Application {
     private float[] carPos = new float[2];
     private float[] camera = new float[2];
 
+    //presets
+    private double MUTATION_RATE = 0.2;
+    private double MUTATION_EFFECT = 0.5;
+    private int populationSize = 20;
+
     //algorithm
     private int generation = 0;
     private int carNumber = 0;
-    private float[][] currentGenome = new float[20][22];
-    private float[][] genome = new float[20][22];
-    private double[] distance = new double[20];
+    private float[][] currentGenome = new float[populationSize][22];
+    private float[][] genome = new float[populationSize][22];
+    private double[] distance = new double[populationSize];
     private static int carsGenerated = 0;
 
     //body list
     private Body[] bodyList;
     private Shape[][][] shapeList;
 
-    //text
+    //text and textfield
     private Text carInfoText;
     private Text carFitnessScoreText;
     private TextField mutationRateField;
@@ -76,10 +82,11 @@ public class MainWindow extends Application {
     private TextField populationSizeTextField;
     private TextField numTilesPresetTextField;
 
-    //presets
-    private double MUTATION_RATE = 0.2;
-    private double MUTATION_EFFECT = 0.5;
-    private int populationSize = 20;
+    private Slider mutationRateSlider;
+    private Slider mutationEffectSlider;
+    private Slider populationSizeSlider;
+    private Slider numTilesPresetSilder;
+
 
     //map maker
     private boolean customMap = false;
@@ -210,23 +217,37 @@ public class MainWindow extends Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        Label mutationRateLabel = new Label("Mutation rate:");
-        grid.add(mutationRateLabel, 0, 0);
-
-        mutationRateField = new TextField("0.2");
-        grid.add(mutationRateField, 1, 0);
-
-        Label mutationIntenseLabel = new Label("Mutation intensity:");
-        grid.add(mutationIntenseLabel, 0, 1);
-
-        mutationEffectField = new TextField("0.5");
-        grid.add(mutationEffectField, 1, 1);
-
         Label populationSizeLabel = new Label("Population Size");
-        grid.add(populationSizeLabel, 0, 2);
+        grid.add(populationSizeLabel, 0, 0);
 
-        populationSizeTextField = new TextField("20");
-        grid.add(populationSizeTextField, 1, 2);
+        populationSizeSlider = new Slider(10,50,20);
+        populationSizeSlider.setBlockIncrement(2.0);
+        populationSizeSlider.setShowTickMarks(true);
+        populationSizeSlider.setMajorTickUnit(10);
+        populationSizeSlider.snapToTicksProperty();
+        grid.add(populationSizeSlider,1,0);
+        //populationSizeTextField = new TextField("20");
+        //grid.add(populationSizeTextField, 1, 0);
+
+
+        Label mutationRateLabel = new Label("Mutation rate:");
+        grid.add(mutationRateLabel, 0, 1);
+
+        mutationRateSlider = new Slider(0.0, 1.0, 0.2);
+
+        grid.add(mutationRateSlider,1,1);
+        //mutationRateField = new TextField("0.2");
+        //grid.add(mutationRateField, 1, 0);
+
+
+        Label mutationEffectLabel = new Label("Mutation Effect:");
+        grid.add(mutationEffectLabel, 0, 2);
+
+        mutationEffectSlider = new Slider(0.0,0.9,0.5);
+        grid.add(mutationEffectSlider, 1,2);
+        //mutationEffectField = new TextField("0.5");
+        //grid.add(mutationEffectField, 1, 1);
+
 
         Label numTilesPresetLabel = new Label("Number of Tiles in Map");
         grid.add(numTilesPresetLabel, 0, 3);
@@ -392,7 +413,7 @@ public class MainWindow extends Application {
                 carsGenerated++;
                 carNumber++;
                 timeline.pause();
-                if (carNumber == 20) {
+                if (carNumber == populationSize) {
                     genome = rouletteSelection(currentGenome, distance);
                     carNumber = 0;
                     generation++;
@@ -683,7 +704,7 @@ public class MainWindow extends Application {
                     }
                 }
             }
-        }while (parents.size() < 10);
+        }while (parents.size() < populationSize/2);
 
         //Call Crossover method
         //next step
@@ -722,7 +743,7 @@ public class MainWindow extends Application {
                    }
                 }
             }
-        }while(parents.size() < 10);
+        }while(parents.size() < populationSize/2);
 
         return crossover(parents);
     }
