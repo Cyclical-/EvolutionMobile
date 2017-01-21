@@ -3,16 +3,16 @@ package sim;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.Slider;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -61,6 +61,7 @@ public class MainWindow extends Application {
     private double MUTATION_RATE = 0.2;
     private double MUTATION_EFFECT = 0.5;
     private int populationSize = 20;
+    private int selectionType = 0; //0- Roulette //1 - Tournament
 
     //algorithm
     private int generation = 0;
@@ -82,11 +83,17 @@ public class MainWindow extends Application {
     private TextField populationSizeTextField;
     private TextField numTilesPresetTextField;
 
+    private Label populationSizeSliderLabel;
+    private Label mutationRateSliderLabel;
+    private Label mutationEffectSliderLabel;
+    private Label numTilesPresetSliderLabel;
+
     private Slider mutationRateSlider;
     private Slider mutationEffectSlider;
     private Slider populationSizeSlider;
-    private Slider numTilesPresetSilder;
+    private Slider numTilesPresetSlider;
 
+    private ComboBox selectionTypeChoice;
 
     //map maker
     private boolean customMap = false;
@@ -217,49 +224,119 @@ public class MainWindow extends Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        Label populationSizeLabel = new Label("Population Size");
-        grid.add(populationSizeLabel, 0, 0);
+        Label selectionTypeCaption = new Label ("Selection Method");
+        grid.add (selectionTypeCaption,0,0);
 
-        populationSizeSlider = new Slider(10,50,20);
-        populationSizeSlider.setBlockIncrement(2.0);
+        if (selectionType == 0) {
+            selectionTypeChoice = new ComboBox(FXCollections.observableArrayList("Roulette Wheel Selection", "Tournament Selection"));
+            selectionTypeChoice.setPromptText("Roulette Wheel Selection");
+        }else if (selectionType == 1){
+            selectionTypeChoice = new ComboBox(FXCollections.observableArrayList("Roulette Wheel Selection", "Tournament Selection"));
+            selectionTypeChoice.setPromptText("Tournament Selection");
+        }
+        grid.add (selectionTypeChoice, 1, 0);
+
+
+        Label populationSizeLabel = new Label("Population Size");
+        grid.add(populationSizeLabel, 0, 1);
+
+        populationSizeSlider = new Slider(12,60,populationSize);
+        populationSizeSlider.setBlockIncrement(4);
+        populationSizeSlider.setMinorTickCount(2);
+        populationSizeSlider.setMajorTickUnit(12);
+        populationSizeSlider.setSnapToTicks(true);
         populationSizeSlider.setShowTickMarks(true);
-        populationSizeSlider.setMajorTickUnit(10);
-        populationSizeSlider.snapToTicksProperty();
-        grid.add(populationSizeSlider,1,0);
+        populationSizeSlider.setShowTickLabels(true);
+        grid.add(populationSizeSlider,1,1);
+
+        populationSizeSliderLabel = new Label(Math.round(populationSizeSlider.getValue())+"");
+        grid.add(populationSizeSliderLabel,2,1);
+
+        populationSizeSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                populationSizeSliderLabel.setText((Math.round(populationSizeSlider.getValue()/4)*4)+"");
+            }
+        });
         //populationSizeTextField = new TextField("20");
         //grid.add(populationSizeTextField, 1, 0);
 
 
         Label mutationRateLabel = new Label("Mutation rate:");
-        grid.add(mutationRateLabel, 0, 1);
+        grid.add(mutationRateLabel, 0, 2);
 
-        mutationRateSlider = new Slider(0.0, 1.0, 0.2);
+        mutationRateSlider = new Slider(0.0, 1.0, MUTATION_RATE);
+        mutationRateSlider.setBlockIncrement(0.1);
+        mutationRateSlider.setMajorTickUnit(0.1);
+        mutationRateSlider.setMinorTickCount(0);
+        mutationRateSlider.setSnapToTicks(true);
+        mutationRateSlider.setShowTickMarks(true);
+        mutationRateSlider.setShowTickLabels(true);
+        grid.add(mutationRateSlider,1,2);
 
-        grid.add(mutationRateSlider,1,1);
+        mutationRateSliderLabel = new Label(mutationRateSlider.getValue()+"");
+        grid.add(mutationRateSliderLabel,2,2);
+
+        mutationRateSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                mutationRateSliderLabel.setText((((double)(Math.round((mutationRateSlider.getValue()*100)*10)/100))/10)+"");
+            }
+        });
         //mutationRateField = new TextField("0.2");
         //grid.add(mutationRateField, 1, 0);
 
 
         Label mutationEffectLabel = new Label("Mutation Effect:");
-        grid.add(mutationEffectLabel, 0, 2);
+        grid.add(mutationEffectLabel, 0, 3);
 
-        mutationEffectSlider = new Slider(0.0,0.9,0.5);
-        grid.add(mutationEffectSlider, 1,2);
+        mutationEffectSlider = new Slider(0.0,1.0,MUTATION_EFFECT);
+        mutationEffectSlider.setBlockIncrement(0.1);
+        mutationEffectSlider.setMinorTickCount(0);
+        mutationEffectSlider.setMajorTickUnit(0.1);
+        mutationEffectSlider.setSnapToTicks(true);
+        mutationEffectSlider.setShowTickMarks(true);
+        mutationEffectSlider.setShowTickLabels(true);
+        grid.add(mutationEffectSlider, 1,3);
+
+        mutationEffectSliderLabel = new Label(mutationEffectSlider.getValue()+"");
+        grid.add(mutationEffectSliderLabel,2,3);
+
+        mutationEffectSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                mutationEffectSliderLabel.setText((((double)(Math.round((mutationEffectSlider.getValue()*100)*10)/100))/10)+"");
+            }
+        });
         //mutationEffectField = new TextField("0.5");
         //grid.add(mutationEffectField, 1, 1);
 
 
         Label numTilesPresetLabel = new Label("Number of Tiles in Map");
-        grid.add(numTilesPresetLabel, 0, 3);
+        grid.add(numTilesPresetLabel, 0, 4);
 
-        numTilesPresetTextField = new TextField("300");
-        grid.add(numTilesPresetTextField, 1, 3);
+        numTilesPresetSlider = new Slider(100,700,Ground.maxSegments);
+        numTilesPresetSlider.setBlockIncrement(100);
+        numTilesPresetSlider.setMinorTickCount(1);
+        numTilesPresetSlider.setMajorTickUnit(100);
+        numTilesPresetSlider.setSnapToTicks(true);
+        numTilesPresetSlider.setShowTickMarks(true);
+        numTilesPresetSlider.setShowTickLabels(true);
+        grid.add(numTilesPresetSlider, 1,4);
+
+        numTilesPresetSliderLabel = new Label(numTilesPresetSlider.getValue()+"");
+        grid.add(numTilesPresetSliderLabel,2,4);
+
+        numTilesPresetSlider.valueProperty().addListener(new ChangeListener<Number>() {
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                numTilesPresetSliderLabel.setText((Math.round(numTilesPresetSlider.getValue()/50)*50)+"");
+            }
+        });
+        //numTilesPresetTextField = new TextField("300");
+        //grid.add(numTilesPresetTextField, 1, 3);
 
         Button backButton = new Button("Back");
         HBox hBox = new HBox(10);
         hBox.setAlignment(Pos.BOTTOM_LEFT);
         hBox.getChildren().add(backButton);
-        grid.add(hBox, 0, 4);
+        grid.add(hBox, 0, 5);
 
         backButton.setOnAction(event -> backPresets(primaryStage));
 
@@ -275,6 +352,13 @@ public class MainWindow extends Application {
      * @param primaryStage stage
      */
     private void backPresets(Stage primaryStage) {
+        populationSize = (int) populationSizeSlider.getValue();
+        MUTATION_RATE = (((double)(Math.round((mutationRateSlider.getValue()*100)*10)/100))/10);
+        MUTATION_EFFECT = (((double)(Math.round((mutationEffectSlider.getValue()*100)*10)/100))/10);
+        Ground.maxSegments = (int) numTilesPresetSlider.getValue();
+        selectionType = selectionTypeChoice.getSelectionModel().getSelectedIndex();
+
+        /*
         if (Util.isDouble(mutationRateField.getText())) {
             MUTATION_RATE = Double.valueOf(mutationRateField.getText());
         }
@@ -287,6 +371,7 @@ public class MainWindow extends Application {
         if (Util.isInt(numTilesPresetTextField.getText())) {
             Ground.maxSegments = Integer.valueOf(numTilesPresetTextField.getText());
         }
+        */
         menu(primaryStage);
     }
 
@@ -414,7 +499,11 @@ public class MainWindow extends Application {
                 carNumber++;
                 timeline.pause();
                 if (carNumber == populationSize) {
-                    genome = rouletteSelection(currentGenome, distance);
+                    if (selectionType == 0) {
+                        genome = rouletteSelection(currentGenome, distance);
+                    }else if (selectionType == 1){
+                        genome = tournamentSelection(currentGenome, distance);
+                    }
                     carNumber = 0;
                     generation++;
                 }
@@ -727,23 +816,34 @@ public class MainWindow extends Application {
             int carA = (int)(Math.random()*populationSize);
             int carB = (int)(Math.random()*populationSize);
 
+            System.out.println ("carA" + carA);
+            System.out.println ("carB" + carB);
+
             if (carA != carB){
                 if ((!selected[carA])&&(!selected[carB])){
-                   if (distance[carA] > distance[carB]){
-                       parents.add(currentGen[carA]);
-                       selected[carA] = true;
-                       selected[carB] = true;
-                   }else if (distance[carA] < distance[carB]){
-                       parents.add(currentGen[carB]);
-                       selected[carA] = true;
-                       selected[carB] = true;
-                   }else{
-                       selected[carA] = false;
-                       selected[carB] = false;
-                   }
+                    if (distance[carA] > distance[carB]){
+                        parents.add(currentGen[carA]);
+                        System.out.println ("Added:" + carA);
+                        selected[carA] = true;
+                        selected[carB] = true;
+                    }else if (distance[carA] < distance[carB]){
+                        parents.add(currentGen[carB]);
+                        System.out.println ("Added:" + carB);
+                        selected[carA] = true;
+                        selected[carB] = true;
+                    }else{
+                        selected[carA] = false;
+                        selected[carB] = false;
+                    }
                 }
             }
         }while(parents.size() < populationSize/2);
+
+        try{
+            Thread.sleep(100000);
+        }catch(Exception e){
+
+        }
 
         return crossover(parents);
     }
@@ -773,12 +873,16 @@ public class MainWindow extends Application {
                 boolean valid = false;
                 float[] genome0 = new float[22];
                 float[] genome1 = new float[22];
+
                 do {
                     int point0 = ((int) (Math.random() * 11) + 1) * 2 - 1;
                     int point1;
                     do {
                         point1 = ((int) (Math.random() * 11) + 1) * 2 - 1;
                     } while (point0 == point1);
+
+                    System.out.println(point0);
+                    System.out.println (point1);
 
                     if (point0 > point1) {
                         int temp = point0;
@@ -822,11 +926,16 @@ public class MainWindow extends Application {
                         }
                     }
 
+                    child1Vertices.clear();
+                    child2Vertices.clear();
+
+                    System.out.println (valid);
                 }while(!valid);
 
                 children[i] = genome0;
                 children[i + 1] = genome1;
                 i += 2;
+                System.out.println ("Added");
             }
         }
 
