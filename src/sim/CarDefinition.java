@@ -66,7 +66,7 @@ public class CarDefinition {
 		return this.wheels;
 	}
 
-	private static boolean checkValid(Vec2 point, ArrayList<Vec2> vertices) {
+	public static boolean checkValid(Vec2 point, ArrayList<Vec2> vertices) {
 		for (int i = 0; i < vertices.size(); i++) {
 			if (!point.equals(vertices.get(i))) {
 				if (MathUtils.distanceSquared(point, vertices.get(i)) < 0.5f * Settings.linearSlop) {

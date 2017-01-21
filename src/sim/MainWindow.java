@@ -200,7 +200,7 @@ public class MainWindow extends Application {
     /**
      * presets
      * preset ranges for algorithm
-     * @author Kevin Chik
+     * @author Kevin Chik and Anthony Lai
      * @param primaryStage stage
      */
     private void presets(Stage primaryStage) {
@@ -250,7 +250,7 @@ public class MainWindow extends Application {
     /**
      * backPresets
      * updates presets and returns to menu
-     * @author Kevin Chik
+     * @author Kevin Chik and Anthony Lai
      * @param primaryStage stage
      */
     private void backPresets(Stage primaryStage) {
@@ -260,21 +260,15 @@ public class MainWindow extends Application {
         if (Util.isDouble(mutationEffectField.getText())) {
             MUTATION_EFFECT = Double.valueOf(mutationEffectField.getText());
         }
-        if (Util.isInt(populationSizeTextField.getText())){
+        if (Util.isInt(populationSizeTextField.getText())) {
             populationSize = Integer.valueOf(populationSizeTextField.getText());
         }
-        if (Util.isInt(numTilesPresetTextField.getText())){
+        if (Util.isInt(numTilesPresetTextField.getText())) {
             Ground.maxSegments = Integer.valueOf(numTilesPresetTextField.getText());
         }
         menu(primaryStage);
     }
 
-    /**
-     * mapMaker
-     * create custom map
-     * @author Kevin Chik
-     * @param primaryStage stage
-     */
     /**
      * mapMaker
      * create custom map
@@ -736,7 +730,7 @@ public class MainWindow extends Application {
     /**
      * crossover
      * performs crossover to create child generation
-     * @author Kevin Chik
+     * @author Kevin Chik (Validation Part by Anthony Lai)
      * @param parents parent generation
      * @return child generation
      */
@@ -750,33 +744,65 @@ public class MainWindow extends Application {
                 parents.set(j, parents.get(random));
                 parents.set(random, temp);
             }
+
             for (int j = 0; j < parents.size(); j += 2) {
                 float[] parent0 = parents.get(j);
                 float[] parent1 = parents.get(j + 1);
-                int point0 = ((int) (Math.random() * 11) + 1) * 2 - 1;
-                int point1;
-                do {
-                    point1 = ((int) (Math.random() * 11) + 1) * 2 - 1;
-                } while (point0 == point1);
-                if (point0 > point1) {
-                    int temp = point0;
-                    point0 = point1;
-                    point1 = temp;
-                }
+
+                boolean valid = false;
                 float[] genome0 = new float[22];
                 float[] genome1 = new float[22];
-                for (int k = 0; k < point0 - 1; k++) {
-                    genome0[k] = parent0[k];
-                    genome1[k] = parent1[k];
-                }
-                for (int k = point0 - 1; k < point1 - 1; k++) {
-                    genome0[k] = parent1[k];
-                    genome1[k] = parent0[k];
-                }
-                for (int k = point1 - 1; k < genome0.length; k++) {
-                    genome0[k] = parent0[k];
-                    genome1[k] = parent1[k];
-                }
+                do {
+                    int point0 = ((int) (Math.random() * 11) + 1) * 2 - 1;
+                    int point1;
+                    do {
+                        point1 = ((int) (Math.random() * 11) + 1) * 2 - 1;
+                    } while (point0 == point1);
+
+                    if (point0 > point1) {
+                        int temp = point0;
+                        point0 = point1;
+                        point1 = temp;
+                    }
+
+                    for (int k = 0; k < point0 - 1; k++) {
+                        genome0[k] = parent0[k];
+                        genome1[k] = parent1[k];
+                    }
+                    for (int k = point0 - 1; k < point1 - 1; k++) {
+                        genome0[k] = parent1[k];
+                        genome1[k] = parent0[k];
+                    }
+                    for (int k = point1 - 1; k < genome0.length; k++) {
+                        genome0[k] = parent0[k];
+                        genome1[k] = parent1[k];
+                    }
+
+                    ArrayList<Vec2> child1Vertices = new ArrayList<Vec2>();
+                    ArrayList<Vec2> child2Vertices = new ArrayList<Vec2>();
+                    for (int k = 0; k < genome0.length - 1; k+=2){
+                        child1Vertices.add(Util.polarToRectangular(genome0[k], genome0[k+1]));
+                        child2Vertices.add(Util.polarToRectangular(genome1[k], genome1[k+1]));
+                    }
+
+                    for (int k = 0; k < child1Vertices.size(); k++){
+                        valid = CarDefinition.checkValid(child1Vertices.get(k), child1Vertices);
+                        if (!valid){
+                            break;
+                        }
+                    }
+
+                    if (valid) {
+                        for (int k = 0; k < child2Vertices.size(); k++) {
+                            valid = CarDefinition.checkValid(child2Vertices.get(k), child2Vertices);
+                            if (!valid) {
+                                break;
+                            }
+                        }
+                    }
+
+                }while(!valid);
+
                 children[i] = genome0;
                 children[i + 1] = genome1;
                 i += 2;
