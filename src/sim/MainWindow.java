@@ -3,16 +3,17 @@ package sim;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -29,13 +30,11 @@ import javafx.util.Duration;
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.collision.shapes.ShapeType;
-import org.jbox2d.common.MathUtils;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
 import org.jbox2d.dynamics.World;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -75,13 +74,9 @@ public class MainWindow extends Application {
     private Body[] bodyList;
     private Shape[][][] shapeList;
 
-    //text and textfield
+    //text and fields
     private Text carInfoText;
     private Text carFitnessScoreText;
-    private TextField mutationRateField;
-    private TextField mutationEffectField;
-    private TextField populationSizeTextField;
-    private TextField numTilesPresetTextField;
 
     private Label populationSizeSliderLabel;
     private Label mutationRateSliderLabel;
@@ -92,8 +87,7 @@ public class MainWindow extends Application {
     private Slider mutationEffectSlider;
     private Slider populationSizeSlider;
     private Slider numTilesPresetSlider;
-
-    private ComboBox selectionTypeChoice;
+    private Slider selectionTypeChoice;
 
     //map maker
     private boolean customMap = false;
@@ -127,10 +121,18 @@ public class MainWindow extends Application {
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
+        grid.setStyle("-fx-background: #FFFFFF;");
+
+        Image image = new Image("Logo.jpg");
+        ImageView imageView = new ImageView();
+        imageView.setImage(image);
+        imageView.setFitWidth(200);
+        imageView.setPreserveRatio(true);
+        grid.add(imageView, 0, 0, 3, 1);
 
         Text sceneTitle = new Text("EvolutionMobile");
         sceneTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-        grid.add(sceneTitle, 0, 0, 3, 1);
+        grid.add(sceneTitle, 0, 1, 3, 1);
 
         Button startButton = new Button("Start");
         Button presetsButton = new Button("Presets");
@@ -140,7 +142,7 @@ public class MainWindow extends Application {
         hBox.getChildren().add(startButton);
         hBox.getChildren().add(presetsButton);
         hBox.getChildren().add(mapButton);
-        grid.add(hBox, 0, 1);
+        grid.add(hBox, 0, 2);
 
         startButton.setOnAction(event -> startSimulation(primaryStage));
         presetsButton.setOnAction(event -> presets(primaryStage));
@@ -224,16 +226,16 @@ public class MainWindow extends Application {
         grid.setVgap(10);
         grid.setPadding(new Insets(25, 25, 25, 25));
 
-        Label selectionTypeCaption = new Label ("Selection Method");
+        Label selectionTypeCaption = new Label ("Selection Method\n(0 = Roulette, 1 = Tournament)");
         grid.add (selectionTypeCaption,0,0);
 
-        if (selectionType == 0) {
-            selectionTypeChoice = new ComboBox(FXCollections.observableArrayList("Roulette Wheel Selection", "Tournament Selection"));
-            selectionTypeChoice.setPromptText("Roulette Wheel Selection");
-        }else if (selectionType == 1){
-            selectionTypeChoice = new ComboBox(FXCollections.observableArrayList("Roulette Wheel Selection", "Tournament Selection"));
-            selectionTypeChoice.setPromptText("Tournament Selection");
-        }
+        selectionTypeChoice = new Slider(0,1,selectionType);
+        selectionTypeChoice.setBlockIncrement(1);
+        selectionTypeChoice.setMinorTickCount(0);
+        selectionTypeChoice.setMajorTickUnit(1);
+        selectionTypeChoice.setSnapToTicks(true);
+        selectionTypeChoice.setShowTickMarks(true);
+        selectionTypeChoice.setShowTickLabels(true);
         grid.add (selectionTypeChoice, 1, 0);
 
 
@@ -252,14 +254,7 @@ public class MainWindow extends Application {
         populationSizeSliderLabel = new Label(Math.round(populationSizeSlider.getValue())+"");
         grid.add(populationSizeSliderLabel,2,1);
 
-        populationSizeSlider.valueProperty().addListener(new ChangeListener<Number>() {
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                populationSizeSliderLabel.setText((Math.round(populationSizeSlider.getValue()/4)*4)+"");
-            }
-        });
-        //populationSizeTextField = new TextField("20");
-        //grid.add(populationSizeTextField, 1, 0);
-
+        populationSizeSlider.valueProperty().addListener((observable, oldValue, newValue) -> populationSizeSliderLabel.setText((Math.round(populationSizeSlider.getValue()/4)*4)+""));
 
         Label mutationRateLabel = new Label("Mutation rate:");
         grid.add(mutationRateLabel, 0, 2);
@@ -276,14 +271,7 @@ public class MainWindow extends Application {
         mutationRateSliderLabel = new Label(mutationRateSlider.getValue()+"");
         grid.add(mutationRateSliderLabel,2,2);
 
-        mutationRateSlider.valueProperty().addListener(new ChangeListener<Number>() {
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                mutationRateSliderLabel.setText((((double)(Math.round((mutationRateSlider.getValue()*100)*10)/100))/10)+"");
-            }
-        });
-        //mutationRateField = new TextField("0.2");
-        //grid.add(mutationRateField, 1, 0);
-
+        mutationRateSlider.valueProperty().addListener((observable, oldValue, newValue) -> mutationRateSliderLabel.setText((((double)(Math.round((mutationRateSlider.getValue()*100)*10)/100))/10)+""));
 
         Label mutationEffectLabel = new Label("Mutation Effect:");
         grid.add(mutationEffectLabel, 0, 3);
@@ -300,13 +288,7 @@ public class MainWindow extends Application {
         mutationEffectSliderLabel = new Label(mutationEffectSlider.getValue()+"");
         grid.add(mutationEffectSliderLabel,2,3);
 
-        mutationEffectSlider.valueProperty().addListener(new ChangeListener<Number>() {
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                mutationEffectSliderLabel.setText((((double)(Math.round((mutationEffectSlider.getValue()*100)*10)/100))/10)+"");
-            }
-        });
-        //mutationEffectField = new TextField("0.5");
-        //grid.add(mutationEffectField, 1, 1);
+        mutationEffectSlider.valueProperty().addListener((observable, oldValue, newValue) -> mutationEffectSliderLabel.setText((((double)(Math.round((mutationEffectSlider.getValue()*100)*10)/100))/10)+""));
 
 
         Label numTilesPresetLabel = new Label("Number of Tiles in Map");
@@ -324,13 +306,7 @@ public class MainWindow extends Application {
         numTilesPresetSliderLabel = new Label(numTilesPresetSlider.getValue()+"");
         grid.add(numTilesPresetSliderLabel,2,4);
 
-        numTilesPresetSlider.valueProperty().addListener(new ChangeListener<Number>() {
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                numTilesPresetSliderLabel.setText((Math.round(numTilesPresetSlider.getValue()/50)*50)+"");
-            }
-        });
-        //numTilesPresetTextField = new TextField("300");
-        //grid.add(numTilesPresetTextField, 1, 3);
+        numTilesPresetSlider.valueProperty().addListener((observable, oldValue, newValue) -> numTilesPresetSliderLabel.setText((Math.round(numTilesPresetSlider.getValue()/50)*50)+""));
 
         Button backButton = new Button("Back");
         HBox hBox = new HBox(10);
@@ -356,22 +332,10 @@ public class MainWindow extends Application {
         MUTATION_RATE = (((double)(Math.round((mutationRateSlider.getValue()*100)*10)/100))/10);
         MUTATION_EFFECT = (((double)(Math.round((mutationEffectSlider.getValue()*100)*10)/100))/10);
         Ground.maxSegments = (int) numTilesPresetSlider.getValue();
-        selectionType = selectionTypeChoice.getSelectionModel().getSelectedIndex();
+//        selectionType = selectionTypeChoice.getSelectionModel().getSelectedIndex();
+        selectionType = (int) selectionTypeChoice.getValue();
 
-        /*
-        if (Util.isDouble(mutationRateField.getText())) {
-            MUTATION_RATE = Double.valueOf(mutationRateField.getText());
-        }
-        if (Util.isDouble(mutationEffectField.getText())) {
-            MUTATION_EFFECT = Double.valueOf(mutationEffectField.getText());
-        }
-        if (Util.isInt(populationSizeTextField.getText())) {
-            populationSize = Integer.valueOf(populationSizeTextField.getText());
-        }
-        if (Util.isInt(numTilesPresetTextField.getText())) {
-            Ground.maxSegments = Integer.valueOf(numTilesPresetTextField.getText());
-        }
-        */
+
         menu(primaryStage);
     }
 
@@ -603,8 +567,6 @@ public class MainWindow extends Application {
                     Circle circle = ((Circle)shapeList[i][j][0]);
                     circle.setFill(Color.rgb(255, 192, 203, 0.5));
                     circle.setStroke(Color.DEEPPINK);
-//                    circle.setFill(Color.rgb(86, 191, 226, 0.5));
-//                    circle.setStroke(Color.DEEPSKYBLUE);
                     circle.setRadius(shape.getRadius() * 50f);
                     circle.setCenterX(x);
                     circle.setCenterY(y + 600f);
@@ -816,19 +778,14 @@ public class MainWindow extends Application {
             int carA = (int)(Math.random()*populationSize);
             int carB = (int)(Math.random()*populationSize);
 
-            System.out.println ("carA" + carA);
-            System.out.println ("carB" + carB);
-
             if (carA != carB){
                 if ((!selected[carA])&&(!selected[carB])){
                     if (distance[carA] > distance[carB]){
                         parents.add(currentGen[carA]);
-                        System.out.println ("Added:" + carA);
                         selected[carA] = true;
                         selected[carB] = true;
                     }else if (distance[carA] < distance[carB]){
                         parents.add(currentGen[carB]);
-                        System.out.println ("Added:" + carB);
                         selected[carA] = true;
                         selected[carB] = true;
                     }else{
@@ -875,9 +832,6 @@ public class MainWindow extends Application {
                         point1 = ((int) (Math.random() * 11) + 1) * 2 - 1;
                     } while (point0 == point1);
 
-                    System.out.println(point0);
-                    System.out.println (point1);
-
                     if (point0 > point1) {
                         int temp = point0;
                         point0 = point1;
@@ -897,16 +851,15 @@ public class MainWindow extends Application {
                         genome1[k] = parent1[k];
                     }
 
-                    ArrayList<Vec2> child1Vertices = new ArrayList<Vec2>();
-                    ArrayList<Vec2> child2Vertices = new ArrayList<Vec2>();
-                    for (int k = 0; k < genome0.length-7; k+=2){
+                    ArrayList<Vec2> child1Vertices = new ArrayList<>();
+                    ArrayList<Vec2> child2Vertices = new ArrayList<>();
+                    for (int k = 0; k < genome0.length - 7; k+=2){
                         child1Vertices.add(Util.polarToRectangular(genome0[k], genome0[k+1]));
                         child2Vertices.add(Util.polarToRectangular(genome1[k], genome1[k+1]));
                     }
 
                     for (int k = 0; k < child1Vertices.size(); k++){
                         valid = CarDefinition.checkValid(child1Vertices.get(k), child1Vertices);
-                        System.out.println ("1:" +valid);
                         if (!valid){
                             break;
                         }
@@ -915,7 +868,6 @@ public class MainWindow extends Application {
                     if (valid) {
                         for (int k = 0; k < child2Vertices.size(); k++) {
                             valid = CarDefinition.checkValid(child2Vertices.get(k), child2Vertices);
-                            System.out.println ("2:" +valid);
                             if (!valid) {
                                 break;
                             }
@@ -925,13 +877,11 @@ public class MainWindow extends Application {
                     child1Vertices.clear();
                     child2Vertices.clear();
 
-                    System.out.println (valid);
                 }while(!valid);
 
                 children[i] = genome0;
                 children[i + 1] = genome1;
                 i += 2;
-                System.out.println ("Added");
             }
         }
 
