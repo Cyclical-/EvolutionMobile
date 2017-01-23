@@ -839,12 +839,6 @@ public class MainWindow extends Application {
             }
         }while(parents.size() < populationSize/2);
 
-        try{
-            Thread.sleep(100000);
-        }catch(Exception e){
-
-        }
-
         return crossover(parents);
     }
 
@@ -905,13 +899,14 @@ public class MainWindow extends Application {
 
                     ArrayList<Vec2> child1Vertices = new ArrayList<Vec2>();
                     ArrayList<Vec2> child2Vertices = new ArrayList<Vec2>();
-                    for (int k = 0; k < genome0.length - 1; k+=2){
+                    for (int k = 0; k < genome0.length-7; k+=2){
                         child1Vertices.add(Util.polarToRectangular(genome0[k], genome0[k+1]));
                         child2Vertices.add(Util.polarToRectangular(genome1[k], genome1[k+1]));
                     }
 
                     for (int k = 0; k < child1Vertices.size(); k++){
                         valid = CarDefinition.checkValid(child1Vertices.get(k), child1Vertices);
+                        System.out.println ("1:" +valid);
                         if (!valid){
                             break;
                         }
@@ -920,6 +915,7 @@ public class MainWindow extends Application {
                     if (valid) {
                         for (int k = 0; k < child2Vertices.size(); k++) {
                             valid = CarDefinition.checkValid(child2Vertices.get(k), child2Vertices);
+                            System.out.println ("2:" +valid);
                             if (!valid) {
                                 break;
                             }
