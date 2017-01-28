@@ -9,17 +9,28 @@ import org.jbox2d.dynamics.World;
 
 import java.util.ArrayList;
 
+/**
+ * Ground.java
+ * @author Jonah Shapiro
+ * @description This class is responsible for generating the ground
+ *
+ */
 public class Ground{
 
-    private World world;
-
+    private World world; //the physics world
+    
+    //segment properties
     private float segmentHeight = 0.2f;
     private float segmentLength = 1.0f;
-
     public static int maxSegments = 300;
 
-    private ArrayList<Vec2> newCoordinates;
+    private ArrayList<Vec2> newCoordinates; //the coordinates of the previous tile
 
+    /**
+     * @param world the physics world
+     * @author Jonah Shapiro
+     * 
+     */
     public Ground(World world) {
         this.world = world;
     }
@@ -90,8 +101,9 @@ public class Ground{
      */
     private ArrayList<Vec2> rotate(Vec2[] coords, Vec2 center, float angle) {
         ArrayList<Vec2> newcoords = new ArrayList<Vec2>();
-        for (int k = 0; k < coords.length; k++) {
+        for (int k = 0; k < coords.length; k++) { //iterate over the tile coordinates
             Vec2 nc = new Vec2();
+            //rotate each coordinate based on the given angle
             nc.x = new Float(Math.cos(angle) * (coords[k].x - center.x) - Math.sin(angle) * (coords[k].y - center.y) + center.x);
             nc.y = new Float(Math.sin(angle) * (coords[k].x - center.x) + Math.cos(angle) * (coords[k].y - center.y) + center.y);
             newcoords.add(nc);
@@ -99,10 +111,16 @@ public class Ground{
         return newcoords;
     }
 
+    /**
+     * customGround
+     * @author Jonah Shapiro
+     * @param data The ground data to use
+     * @description this method generates a set of tiles given the ground data
+     */
     public void customGround(ArrayList<float[]> data) {
         Vec2 startPos = new Vec2(0, -0.5f);
-        for (float[] angle : data) {
-            Body tile = newTile(startPos, (float) (angle[0]));
+        for (float[] angle : data) { //iterate over the data
+            Body tile = newTile(startPos, (float) (angle[0])); //create a tile
             startPos = tile.getWorldPoint(this.newCoordinates.get(3));
         }
     }

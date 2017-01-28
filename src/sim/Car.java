@@ -22,16 +22,17 @@ import sim.CarDefinition.WheelDefinition;
  *
  */
 public class Car {
+	
+	private static final int MAX_CAR_HEALTH = MainWindow.FPS;
 
-	private static final int MAX_CAR_HEALTH = Simulation.BOX2D_FPS;
-
-	private Body chassis;
+	private Body chassis; //the chassis of the car
+	//the following two arraylists are used to destroy the car
 	private ArrayList<Body> wheels;
 	private ArrayList<Joint> joints;
 	private World world;
-	private double score = 0;
 
 	private int health = MAX_CAR_HEALTH;
+	//The following variables are used to check for car death and fitness score
 	private float maxPositionx = 0F;
 	private float maxPositiony = 0F;
 	private float minPositiony = 0F;
@@ -49,27 +50,33 @@ public class Car {
 	 * @param world
 	 */
 	public Car(CarDefinition def, World world) {
+		//initialize various objects
 		this.world = world;
 		this.genome = new float[22];
 		this.definition = def;
 		this.wheels = new ArrayList<Body>();
 		this.joints = new ArrayList<Joint>();
-		writeGenome();
+		writeGenome(); //write the given definition to a genome array
 		this.chassis = createChassis(this.definition.getVertices()); // create chassis
 		float carMass = this.chassis.getMass();
 		// create wheels
 		for (int i = 0; i < this.definition.getWheels().size(); i++) {
-			if (this.definition.getWheels().get(i).getVertex() != -1) {
-				Body wheel = createWheel(this.definition.getWheels().get(i));
+			if (this.definition.getWheels().get(i).getVertex() != -1) { //check if the wheel should exist
+				Body wheel = createWheel(this.definition.getWheels().get(i)); //create the wheel
 				this.wheels.add(wheel);
 				carMass += wheel.getMass();
-				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), ((carMass) * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius()))));
+				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), ((carMass) * (-MainWindow.GRAVITY.y / this.definition.getWheels().get(i).getRadius())))); //create the joint for the wheel
 			}
 		}
 		this.alive = true;
 
 	}
 
+	/**
+	 * @param genome
+	 * @param world
+	 * @description Generate a car given the genome
+	 */
 	public Car(float[] genome, World world) {
 		this.world = world;
 		this.genome = genome;
@@ -84,7 +91,7 @@ public class Car {
 				Body wheel = createWheel(this.definition.getWheels().get(i));
 				this.wheels.add(wheel);
 				carMass += wheel.getMass();
-				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), (carMass * (-Simulation.GRAVITY.y / this.definition.getWheels().get(i).getRadius()))));
+				this.joints.add(createJointForWheel(wheel, this.definition.getWheels().get(i), (carMass * (-MainWindow.GRAVITY.y / this.definition.getWheels().get(i).getRadius()))));
 			}
 		}
 		this.alive = true;
@@ -94,13 +101,15 @@ public class Car {
 	 * createDefinition
 	 * 
 	 * @author Jonah Shapiro
-	 * @return
+	 * @return the created definition
 	 */
 	private CarDefinition createDefinition() {
 		CarDefinition def = new CarDefinition();
+		//create the definition vertices
 		for (int i = 0; i < CarDefinition.NUM_VERTICES; i++) {
 			def.addVertex(Util.polarToRectangular(this.genome[i * 2], this.genome[(i * 2) + 1]));
 		}
+		//create the definiton wheels
 		for (int w = 0; w < CarDefinition.NUM_WHEELS; w++) {
 			def.addWheel(def.new WheelDefinition(this.genome[(w * 2) + (CarDefinition.NUM_VERTICES * 2)], Util.nextFloat(25, 75), (int) this.genome[(w * 2) + 1 + (CarDefinition.NUM_VERTICES * 2)]));
 		}
@@ -132,57 +141,66 @@ public class Car {
 
 	}
 
+	/**
+	 * checkDeath
+	 * @description this method checks if the car has died as well and decrements its health each tick
+	 * @author Jonah Shapiro
+	 * @return A boolean representing whether or not the car is alive
+	 */
 	public boolean checkDeath() {
 		Vec2 position = this.getPosition();
 
-		if (position.y > this.maxPositiony) {
+		if (position.y > this.maxPositiony) { //increment the maximum height reached
 			this.maxPositiony = position.y;
 		}
 
-		if (position.y < minPositiony) {
+		if (position.y < minPositiony) { //decrement the minimum height reached
 			this.minPositiony = position.y;
 		}
-
-		if (position.x < 0.0F) {
+		//check if the car is out of bounds
+		if (position.x < 0.0F) { 
 			return true;
 		}
-		if (position.x > Ground.maxSegments) {
+		if (position.x > Ground.maxSegments) { 
 			this.maxPositionx = Ground.maxSegments;
 			return true;
-
 		}
-
-		if (Math.abs(this.chassis.getLinearVelocity().y) > 0.01f) {
+		//if the car is moving fast enough, reset its health
+		if (Math.abs(this.chassis.getLinearVelocity().y) > 0.01f) { 
 			this.health = MAX_CAR_HEALTH;
 		}
-
-		if (position.x > maxPositionx + 0.01f) {
+		if (position.x > maxPositionx + 0.01f) { 
 			this.health = MAX_CAR_HEALTH;
 			this.maxPositionx = position.x;
 		} else {
-			if (Math.abs(this.chassis.getLinearVelocity().x) < 0.01f) {
+			if (Math.abs(this.chassis.getLinearVelocity().x) < 0.01f) { //if the car is moving too slowly decrement its health  
 				this.health--;
 			}
-			if (position.x > maxPositionx) {
+			if (position.x > maxPositionx) { //set the maximum distance travelled
 				this.maxPositionx = position.x;
 			}
-			this.health--;
+			this.health--; //decrement the car's health
 			if (this.health <= 0) {
-				return true;
+				return true; //check for death
 			}
 		}
 		return false;
 
 	}
 
+	/**
+	 * kill
+	 * @author Jonah Shapiro
+	 * @description This method destroys the car body
+	 */
 	public void kill() {
-		for (Joint j : this.joints) {
+		for (Joint j : this.joints) { //destroy the joints
 			this.world.destroyJoint(j);
 		}
-		for (Body wheel : this.wheels) {
+		for (Body wheel : this.wheels) { //destroy the wheels
 			this.world.destroyBody(wheel);
 		}
-		this.world.destroyBody(this.chassis);
+		this.world.destroyBody(this.chassis); //destroy the chassis
 		this.alive = false;
 	}
 
@@ -191,14 +209,15 @@ public class Car {
 	 * 
 	 * @author Jonah Shapiro
 	 * @param wheelDefinition
-	 * @return
+	 * @return The created wheel body
 	 */
 	private Body createWheel(CarDefinition.WheelDefinition wheelDef) {
+		//the following code initializes and sets various properties of the wheel body
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(1.0F, 2.0F);
 		Body body = world.createBody(bodyDef);
-		FixtureDef fixtureDef = new FixtureDef();
+		FixtureDef fixtureDef = new FixtureDef(); //create the wheel fixture
 		fixtureDef.shape = new CircleShape();
 		fixtureDef.shape.setRadius(wheelDef.getRadius());
 		fixtureDef.density = wheelDef.getDensity();
@@ -206,23 +225,33 @@ public class Car {
 		fixtureDef.restitution = 0.2F;
 		fixtureDef.filter.groupIndex = -1;
 
-		body.createFixture(fixtureDef);
+		body.createFixture(fixtureDef); //attach the fixture
 
 		return body;
 
 	}
 
+	/**
+	 * createJointForWheel
+	 * @author Jonah Shapiro
+	 * @param wheel
+	 * @param wheelDef
+	 * @param torqueWheel
+	 * @return The created joint
+	 */
 	private Joint createJointForWheel(Body wheel, CarDefinition.WheelDefinition wheelDef, float torqueWheel) {
 		RevoluteJointDef jointDefinition = new RevoluteJointDef();
-		Vec2 randVec2 = this.definition.getVertices().get(wheelDef.getVertex());
+		Vec2 randVec2 = this.definition.getVertices().get(wheelDef.getVertex()); //get the vertex that the wheel will be attached to
+		//set the joint anchor bodies
 		jointDefinition.bodyA = this.chassis;
 		jointDefinition.bodyB = wheel;
+		//set the joint anchor points
 		jointDefinition.localAnchorA = randVec2;
 		jointDefinition.localAnchorB = new Vec2(0F, 0F);
 		jointDefinition.maxMotorTorque = torqueWheel;
 		jointDefinition.motorSpeed = -CarDefinition.MOTOR_SPEED;
 		jointDefinition.enableMotor = true;
-		return world.createJoint(jointDefinition);
+		return world.createJoint(jointDefinition); //create the joint
 	}
 
 	/**
@@ -230,13 +259,15 @@ public class Car {
 	 * 
 	 * @author Jonah Shapiro
 	 * @param vertices
-	 * @return
+	 * @return The created chassis
 	 */
 	private Body createChassis(ArrayList<Vec2> vertices) {
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DYNAMIC;
 		bodyDef.position = new Vec2(1.0F, 2.0F);
 		Body body = world.createBody(bodyDef);
+		//The following block of code sorts the list of polar coordinates in descending order based on their angle
+		//This is done in order to connect the points using non-intersecting triangles
 		TreeMap<Float, Float> points = new TreeMap<Float, Float>();
 		for (int i = 0; i < vertices.size(); i++) {
 			float[] polar = Util.rectangularToPolar(vertices.get(i));
@@ -261,9 +292,9 @@ public class Car {
 	 * createChassisPart
 	 * 
 	 * @author Jonah Shapiro
-	 * @param body
-	 * @param one
-	 * @param two
+	 * @param body The chassis body
+	 * @param one the first point
+	 * @param two the second point
 	 */
 	private void createChassisPart(Body body, Vec2 one, Vec2 two) {
 		Vec2[] listOfVertices = new Vec2[3];
@@ -271,7 +302,8 @@ public class Car {
 		listOfVertices[1] = two;
 		listOfVertices[2] = new Vec2(0, 0);
 		PolygonShape s = new PolygonShape();
-		s.set(listOfVertices, 3);
+		s.set(listOfVertices, 3); //set the vertices of the polygon
+		//create and initialize the polygon fixture
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = s;
 		fixtureDef.density = CarDefinition.CHASSIS_DENSITY;

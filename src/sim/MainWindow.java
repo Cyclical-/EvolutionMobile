@@ -45,9 +45,9 @@ import java.util.ArrayList;
 public class MainWindow extends Application {
 
     //world
-    private static final Vec2 GRAVITY = new Vec2(0.0F, -9.81F);
+    public static final Vec2 GRAVITY = new Vec2(0.0F, -9.81F);
     private World world = new World(GRAVITY);
-    private static final int FPS = 60;
+    public static final int FPS = 60;
     private Timeline timeline = new Timeline();
 
     //stage
